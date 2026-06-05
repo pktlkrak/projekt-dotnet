@@ -27,12 +27,26 @@ namespace ClinicManager.Views.Patients
         [BindProperty(SupportsGet = true)]
         public bool ShowDeleted { get; set; } = false;
 
+        [BindProperty(SupportsGet = true)]
+        public string? SearchQuery { get; set; }
+
         public async Task OnGetAsync()
         {
-            // Show only non-deleted users by default, or all if toggle is on
-            Patient = await _context.Patients
-                .Where(p => !ShowDeleted ? !p.IsDeleted : true)
-                .ToListAsync();
+            // Start with base query
+            var query = _context.Patients.AsQueryable();
+
+            // Filter by deleted status
+            query = query.Where(p => !ShowDeleted ? !p.IsDeleted : true);
+
+            // Search by PESEL or Surname
+            if (!string.IsNullOrWhiteSpace(SearchQuery))
+            {
+                query = query.Where(p => 
+                    p.Pesel.Contains(SearchQuery) || 
+                    p.LastName.Contains(SearchQuery));
+            }
+
+            Patient = await query.ToListAsync();
         }
     }
 }
