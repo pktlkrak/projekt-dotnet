@@ -4,14 +4,26 @@
     {
         public int Id { get; set; }
         public int PatientId { get; set; }
-        public string DoctorId { get; set; } = string.Empty; // FK do ApplicationUser
-        public DateTime ScheduledAt { get; set; }
-        public VisitStatus Status { get; set; } = VisitStatus.Scheduled;
+        public int DoctorId { get; set; }
 
-        // Nawigacja
-        public Patient Patient { get; set; } = null!;
-        public ApplicationUser Doctor { get; set; } = null!;
-        public ICollection<ProcedurePerformed> ProceduresPerformed { get; set; } = new List<ProcedurePerformed>();
-        public ICollection<ClinicalNote> ClinicalNotes { get; set; } = new List<ClinicalNote>();
+        public VisitStastus Status { get; set; }
+
+        public ICollection<Procedure> Procedures { get; set; }
+        public ICollection<Perscription> Reciepts { get; set; }
+
+        // Notatki Kliniczne
+
+        public string Survey { get; set; } // wywiad
+        public string Diagnosis { get; set; } // rozpoznanie
+        public string Recommendations { get; set; } // zalecenia
+
+    }
+
+    public enum VisitStastus
+    {
+        Scheduled,
+        InProgress,
+        Finished,
+        Cancelled
     }
 }

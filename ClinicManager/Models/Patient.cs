@@ -1,17 +1,22 @@
-namespace ClinicManager.Models;
+﻿using System.Collections;
 
-public class Patient
+namespace ClinicManager.Models
 {
-    public int Id { get; set; }
-    public string FirstName { get; set; } = string.Empty;
-    public string LastName { get; set; } = string.Empty;
-    public string Pesel { get; set; } = string.Empty;
-    public string PhoneNumber { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public DateTime DateOfBirth { get; set; }
-    public bool IsDeleted { get; set; } = false; // soft delete (RODO)
+    public class Patient
+    {
+        public int Id { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Pesel { get; set; }
+        public string PhoneNumber { get; set; }
+        public string Email { get; set; } = string.Empty;
+        public DateTime DateOfBirth { get; set; }
+        public bool IsDeleted { get; set; } = false; // soft delete (RODO) 
 
-    // Nawigacja
-    public MedicalRecord? MedicalRecord { get; set; }
-    public ICollection<Visit> Visits { get; set; } = new List<Visit>();
+        public string InsuranceNumber { get; set; }
+
+
+        ICollection<string> PathToMedicalRecords { get; set; } // ścierzki do zdj skanów w wwwroot/uploads (kartoteka)
+        ICollection<Visit> Visits { get; set; } = new List<Visit>();
+    }
 }
