@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -10,6 +11,7 @@ using ClinicManager.Models;
 
 namespace ClinicManager.Views.Patients
 {
+    [Authorize(Roles = "Admin,RegistrationWorker")]
     public class CreateModel : PageModel
     {
         private readonly ClinicManager.Data.AppDbContext _context;
@@ -34,6 +36,9 @@ namespace ClinicManager.Views.Patients
             {
                 return Page();
             }
+
+            // Always create non-deleted users
+            Patient.IsDeleted = false;
 
             _context.Patients.Add(Patient);
             await _context.SaveChangesAsync();

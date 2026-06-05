@@ -1,16 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using ClinicManager.Data;
+using ClinicManager.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using ClinicManager.Data;
-using ClinicManager.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ClinicManager.Views.Patients
 {
+    [Authorize(Roles = "Admin,RegistrationWorker")]
+
     public class EditModel : PageModel
     {
         private readonly ClinicManager.Data.AppDbContext _context;
@@ -48,7 +51,22 @@ namespace ClinicManager.Views.Patients
                 return Page();
             }
 
-            _context.Attach(Patient).State = EntityState.Modified;
+            // Get the existing patient from database to preserve IsDeleted status
+            var existingPatient = await _context.Patients.FindAsync(Patient.Id);
+            if (existingPatient == null)
+            {
+                return NotFound();
+            }
+
+            // Update only allowed properties, preserve IsDeleted
+            existingPatient.FirstName = Patient.FirstName;
+            existingPatient.LastName = Patient.LastName;
+            existingPatient.Pesel = Patient.Pesel;
+            existingPatient.PhoneNumber = Patient.PhoneNumber;
+            existingPatient.Email = Patient.Email;
+            existingPatient.DateOfBirth = Patient.DateOfBirth;
+            existingPatient.InsuranceNumber = Patient.InsuranceNumber;
+            // IsDeleted is NOT updated - can only be changed via Delete operation
 
             try
             {

@@ -42,11 +42,55 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    foreach (var role in new[] { "Admin", "Doctor", "RegistrationWorker" })
+    foreach (var role in new[] { "Admin", "Doctor", "RegistrationWorker" }) { 
         // The roles get added into the database - prevent duplicates by checking whether or not they exist.
         if (!await roleManager.RoleExistsAsync(role))
+        {
             await roleManager.CreateAsync(new IdentityRole(role));
+        }
+    }
+
+    // THIS IS FOR TESTING PURPOSES ONLY - DO NOT USE IN PRODUCTION ENVIRONMENT
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+    // Create default Admin user
+    var adminEmail = "admin@clinic.local";
+    if (await userManager.FindByEmailAsync(adminEmail) == null)
+    {
+        var adminUser = new ApplicationUser
+        {
+            UserName = adminEmail,
+            Email = adminEmail,
+            EmailConfirmed = true
+        };
+
+        var result = await userManager.CreateAsync(adminUser, "Admin123!");
+        if (result.Succeeded)
+        {
+            await userManager.AddToRoleAsync(adminUser, "Admin");
+        }
+    }
+
+    // Create default Receptionist user for testing
+    var receptionistEmail = "receptionist@clinic.local";
+    if (await userManager.FindByEmailAsync(receptionistEmail) == null)
+    {
+        var receptionistUser = new ApplicationUser
+        {
+            UserName = receptionistEmail,
+            Email = receptionistEmail,
+            EmailConfirmed = true
+        };
+
+        var result = await userManager.CreateAsync(receptionistUser, "Reception123!");
+        if (result.Succeeded)
+        {
+            await userManager.AddToRoleAsync(receptionistUser, "RegistrationWorker");
+        }
+    }
 }
+
+
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

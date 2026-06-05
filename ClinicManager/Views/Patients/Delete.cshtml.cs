@@ -1,15 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using ClinicManager.Data;
+using ClinicManager.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using ClinicManager.Data;
-using ClinicManager.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ClinicManager.Views.Patients
 {
+    [Authorize(Roles = "Admin,RegistrationWorker")]
+
     public class DeleteModel : PageModel
     {
         private readonly ClinicManager.Data.AppDbContext _context;
@@ -51,8 +54,9 @@ namespace ClinicManager.Views.Patients
             var patient = await _context.Patients.FindAsync(id);
             if (patient != null)
             {
-                Patient = patient;
-                _context.Patients.Remove(Patient);
+                // Soft delete - set IsDeleted to true instead of removing
+                patient.IsDeleted = true;
+                _context.Patients.Update(patient);
                 await _context.SaveChangesAsync();
             }
 
