@@ -1,0 +1,70 @@
+﻿@page
+@model ClinicManager.Views.Patients.EditModel
+
+@{
+    ViewData["Title"] = "Edit";
+}
+
+<h1>Edit</h1>
+
+<h4>Patient</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Patient.Id" />
+            <div class="form-group">
+                <label asp-for="Patient.FirstName" class="control-label"></label>
+                <input asp-for="Patient.FirstName" class="form-control" />
+                <span asp-validation-for="Patient.FirstName" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Patient.LastName" class="control-label"></label>
+                <input asp-for="Patient.LastName" class="form-control" />
+                <span asp-validation-for="Patient.LastName" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Patient.Pesel" class="control-label"></label>
+                <input asp-for="Patient.Pesel" class="form-control" />
+                <span asp-validation-for="Patient.Pesel" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Patient.PhoneNumber" class="control-label"></label>
+                <input asp-for="Patient.PhoneNumber" class="form-control" />
+                <span asp-validation-for="Patient.PhoneNumber" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Patient.Email" class="control-label"></label>
+                <input asp-for="Patient.Email" class="form-control" />
+                <span asp-validation-for="Patient.Email" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Patient.DateOfBirth" class="control-label"></label>
+                <input asp-for="Patient.DateOfBirth" class="form-control" />
+                <span asp-validation-for="Patient.DateOfBirth" class="text-danger"></span>
+            </div>
+            <div class="form-group form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" asp-for="Patient.IsDeleted" /> @Html.DisplayNameFor(model => model.Patient.IsDeleted)
+                </label>
+            </div>
+            <div class="form-group">
+                <label asp-for="Patient.InsuranceNumber" class="control-label"></label>
+                <input asp-for="Patient.InsuranceNumber" class="form-control" />
+                <span asp-validation-for="Patient.InsuranceNumber" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-page="./Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
