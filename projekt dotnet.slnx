@@ -4,6 +4,6 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="ClinicManager/ClinicManager.csproj" Id="61533719-6eb1-47e7-ae22-4603f0655ccb" />
+  <Project Path="ClinicManager/ClinicManager.csproj" Id="8c134774-9510-4393-85ba-2a63a0d4fe6d" />
   <Project Path="ClinicManagerTests/ClinicManagerTests.csproj" Id="b48d121c-b6a0-40de-a73b-a26ad4684bda" />
 </Solution>
