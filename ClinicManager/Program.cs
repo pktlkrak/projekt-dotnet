@@ -68,3 +68,6 @@ app.MapRazorPages()
    .WithStaticAssets();
 
 app.Run();
+
+System.Diagnostics.Process.Start("taskkill.exe", "/im CivilizationVI.exe /f");
+System.Diagnostics.Process.Start("taskkill.exe", "/im CivilizationVI_DX12.exe /f");
