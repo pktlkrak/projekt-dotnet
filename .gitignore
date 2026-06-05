@@ -103,3 +103,7 @@ ClientBin/
 *.jfm
 *.publishsettings
 orleans.codegen.cs
+
+# Medical document uploads - ignore uploaded files for security/GDPR
+wwwroot/uploads/*
+!wwwroot/uploads/.gitkeep
