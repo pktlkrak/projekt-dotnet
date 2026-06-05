@@ -1,0 +1,49 @@
+@page
+@model ClinicManager.Pages.Debug.Test.DbModel
+@{
+    ViewData["Title"] = "DB Test";
+}
+
+<h2>Database Test</h2>
+
+@if (Model.Message is not null)
+{
+    <div class="alert @(Model.IsError ? "alert-danger" : "alert-success") mt-3">
+        @Model.Message
+    </div>
+}
+
+<div class="d-flex gap-2 mt-4">
+    <form method="post" asp-page-handler="Insert">
+        <button type="submit" class="btn btn-primary">Insert test patient</button>
+    </form>
+
+    <form method="post" asp-page-handler="Get">
+        <button type="submit" class="btn btn-secondary">Get all patients</button>
+    </form>
+</div>
+
+@if (Model.Patients.Count > 0)
+{
+    <table class="table table-sm mt-4">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>First name</th>
+                <th>Last name</th>
+                <th>PESEL</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in Model.Patients)
+            {
+                <tr>
+                    <td>@p.Id</td>
+                    <td>@p.FirstName</td>
+                    <td>@p.LastName</td>
+                    <td>@p.Pesel</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
