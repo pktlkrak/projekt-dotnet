@@ -29,14 +29,14 @@ Projekt powinien mieć przejrzystą strukturę, modularność, oraz używać now
 
 | Moduł                 | Wymagania                                                                 |
 |-----------------------|---------------------------------------------------------------------------|
-| 🔐 Uwierzytelnianie   | Rejestracja, logowanie (ASP.NET Identity), role: `Admin`, `Lekarz`, `Rejestratorka` |
+| 🔐 Uwierzytelnianie   | Rejestracja, logowanie (ASP.NET Identity), role: `Admin`, `Doctor`, `RegistrationWorker` |
 | 👤 Pacjenci           | CRUD pacjentów, wyszukiwanie (po nazwisku/PESEL), lista wizyt pacjenta   |
 | 🪪 Kartoteka          | CRUD kartoteki, upload skanu/zdjęcia dokumentu (np. skierowanie), PESEL, nr ubezpieczenia |
 | 📅 Wizyty             | Tworzenie wizyt, statusy (zaplanowana/w trakcie/zakończona/anulowana), przypisywanie lekarza |
 | 🩺 Procedury          | Lista procedur medycznych: opis + koszt świadczenia                      |
 | 💊 Leki / recepty     | Wybór leków z katalogu, dawkowanie, ilość, koszt                         |
 | 📝 Notatki kliniczne  | Notatki wewnętrzne do wizyty (wywiad, rozpoznanie, zalecenia)            |
-| 📦 Katalog leków      | CRUD leków, tylko dla `Admin` / `Rejestratorka`                          |
+| 📦 Katalog leków      | CRUD leków, tylko dla `Admin` / `RegistrationWorker`                          |
 | 📈 Raporty            | Koszt świadczeń danego pacjenta / lekarza / miesiąca + eksport do PDF    |
 
 ---
