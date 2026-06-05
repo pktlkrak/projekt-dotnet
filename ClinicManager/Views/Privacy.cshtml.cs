@@ -7,6 +7,7 @@ namespace ClinicManager.Pages
     {
         public void OnGet()
         {
+            
         }
     }
 
