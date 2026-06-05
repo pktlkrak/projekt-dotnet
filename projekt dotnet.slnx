@@ -1,0 +1,9 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="ClinicManagerTests/ClinicManagerTests.csproj" Id="b48d121c-b6a0-40de-a73b-a26ad4684bda" />
+  <Project Path="projekt dotnet/projekt dotnet.vcxproj" Id="31a4c77a-7fb8-40da-92bd-74e86c66d620" />
+</Solution>
