@@ -5,12 +5,17 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using NLog;
 using NLog.Web;
+using System.Globalization;
 
 var logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
 logger.Info("Starting ClinicManager");
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
+
+var culture = new CultureInfo("pl-PL");
+CultureInfo.DefaultThreadCurrentCulture = culture;
+CultureInfo.DefaultThreadCurrentUICulture = culture;
 builder.Host.UseNLog();
 
 // Add services to the container.
