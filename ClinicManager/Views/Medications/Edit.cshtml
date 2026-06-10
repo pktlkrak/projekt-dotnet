@@ -1,0 +1,48 @@
+@page "{id:int}"
+@model ClinicManager.Views.Medications.EditMedicationModel
+@{
+    ViewData["Title"] = "Edit Medication";
+}
+
+<div class="d-flex align-items-center mb-4 gap-3">
+    <a href="@Model.ReturnUrl" class="btn btn-outline-secondary btn-sm">← Back</a>
+    <h2 class="mb-0">Edit Medication</h2>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <form method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                    <input type="hidden" asp-for="Medication.Id" />
+                    <input type="hidden" asp-for="ReturnUrl" />
+
+                    <div class="mb-3">
+                        <label asp-for="Medication.Name" class="form-label">Name</label>
+                        <input asp-for="Medication.Name" class="form-control" />
+                        <span asp-validation-for="Medication.Name" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Medication.Cost" class="form-label">Cost</label>
+                        <div class="input-group">
+                            <span class="input-group-text">PLN</span>
+                            <input asp-for="Medication.Cost" type="number" step="0.01" min="0" class="form-control" />
+                        </div>
+                        <span asp-validation-for="Medication.Cost" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <a href="@Model.ReturnUrl" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
