@@ -6,6 +6,15 @@
 }
 
 <h1>@ViewData["Title"]</h1>
+
+@if (TempData["StatusMessage"] is string statusMsg)
+{
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        @statusMsg
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
 <div class="row">
     <div class="col-md-4">
         <section>
@@ -34,13 +43,7 @@
                 </div>
                 <div>
                     <p>
-                        <a id="forgot-password" asp-page="./ForgotPassword">Forgot your password?</a>
-                    </p>
-                    <p>
                         <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Register as a new user</a>
-                    </p>
-                    <p>
-                        <a id="resend-confirmation" asp-page="./ResendEmailConfirmation">Resend email confirmation</a>
                     </p>
                 </div>
             </form>

@@ -89,7 +89,7 @@ namespace ClinicManager.Areas.Identity.Pages.Account
         {
             if (!string.IsNullOrEmpty(ErrorMessage))
             {
-                ModelState.AddModelError(string.Empty, ErrorMessage);
+                ModelState.AddModelError("", ErrorMessage);
             }
 
             returnUrl ??= Url.Content("~/");
@@ -122,6 +122,11 @@ namespace ClinicManager.Areas.Identity.Pages.Account
                 {
                     return RedirectToPage("./LoginWith2fa", new { ReturnUrl = returnUrl, RememberMe = Input.RememberMe });
                 }
+                if (result.IsNotAllowed)
+                {
+                    ModelState.AddModelError("", "Your account is pending admin approval.");
+                    return Page();
+                }
                 if (result.IsLockedOut)
                 {
                     _logger.LogWarning("User account locked out.");
@@ -129,7 +134,7 @@ namespace ClinicManager.Areas.Identity.Pages.Account
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                    ModelState.AddModelError("", "Invalid login attempt.");
                     return Page();
                 }
             }
