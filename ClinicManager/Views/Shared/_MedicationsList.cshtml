@@ -1,0 +1,51 @@
+@using ClinicManager.Models
+@model (List<Medication> Medications, string ReturnUrl)
+
+<div class="d-flex flex-column" style="width: 320px; min-width: 260px;">
+    <div class="card border-0 shadow-sm d-flex flex-column h-100 overflow-hidden">
+        <div class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Medications</h5>
+            <a asp-page="/Medications/Create" asp-route-returnUrl="@Model.ReturnUrl" class="btn btn-primary btn-sm">+ Add</a>
+        </div>
+        <div class="overflow-auto flex-grow-1">
+            @if (!Model.Medications.Any())
+            {
+                <p class="text-muted p-3 mb-0">No medications in catalog.</p>
+            }
+            else
+            {
+                <table class="table table-hover mb-0">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th>Name</th>
+                            <th>Cost</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in Model.Medications)
+                        {
+                            <tr>
+                                <td class="align-middle">@m.Name</td>
+                                <td class="align-middle text-muted small">@m.Cost.ToString("C")</td>
+                                <td class="text-end align-middle">
+                                    <div class="d-flex gap-1 justify-content-end">
+                                        <a asp-page="/Medications/Edit"
+                                           asp-route-id="@m.Id"
+                                           asp-route-returnUrl="@Model.ReturnUrl"
+                                           class="btn btn-outline-secondary btn-sm">Edit</a>
+                                        <form method="post" asp-page-handler="DeleteMedication" class="m-0"
+                                              onsubmit="return confirm('Delete @m.Name?')">
+                                            <input type="hidden" name="medicationId" value="@m.Id" />
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>

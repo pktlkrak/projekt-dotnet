@@ -1,0 +1,72 @@
+@page
+@model ClinicManager.Views.Admin.EditUserModel
+@{
+    ViewData["Title"] = "Edit User";
+}
+
+<div class="d-flex align-items-center mb-4 gap-3">
+    <a asp-page="/Admin/Index" class="btn btn-outline-secondary btn-sm">← Back</a>
+    <h2 class="mb-0">Edit User</h2>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    <div class="alert @(Model.StatusMessage.StartsWith("Error") ? "alert-danger" : "alert-success") alert-dismissible fade show" role="alert">
+        @Model.StatusMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 text-muted text-uppercase small fw-semibold">User Info</h6>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-4 text-muted">Name</dt>
+                    <dd class="col-8">@Model.EditUser.LastName @Model.EditUser.FirstName</dd>
+                    <dt class="col-4 text-muted">Email</dt>
+                    <dd class="col-8">@Model.EditUser.Email</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <form method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                    <input type="hidden" asp-for="UserId" />
+
+                    <div class="mb-3">
+                        <label asp-for="NewRole" class="form-label">Role</label>
+                        <select asp-for="NewRole" class="form-select">
+                            <option value="Admin">Admin</option>
+                            <option value="Doctor">Doctor</option>
+                            <option value="RegistrationWorker">RegistrationWorker</option>
+                        </select>
+                        <div class="form-text">Current: @string.Join(", ", Model.CurrentRoles)</div>
+                    </div>
+
+                    <hr class="my-3" />
+
+                    <div class="mb-3">
+                        <label asp-for="NewPassword" class="form-label">New Password <span class="text-muted small fw-normal">(leave blank to keep current)</span></label>
+                        <input asp-for="NewPassword" type="password" class="form-control" autocomplete="new-password" />
+                        <span asp-validation-for="NewPassword" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <a asp-page="/Admin/Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

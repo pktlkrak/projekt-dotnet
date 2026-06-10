@@ -34,12 +34,25 @@
                         {
                             var currentUser = await UserManager.GetUserAsync(User);
                             <li class="nav-item me-2 text-dark">
+                                @if (Context.Session.GetString("OriginalAdminId") is string originalId)
+                                {
+                                    var user = await UserManager.FindByIdAsync(originalId);
+                                    <span>
+                                        (@user?.FirstName @user?.LastName) @@
+                                    </span>
+                                }
                                 @currentUser?.FirstName @currentUser?.LastName
                             </li>
                             <li class="nav-item">
-                                <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/Index", new { area = "" })" method="post">
-                                    <button type="submit" class="btn btn-link p-0 text-dark">Log off</button>
-                                </form>
+                                @if (Context.Session.GetString("OriginalAdminId") == null) {
+                                    <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Page("/Index", new { area = "" })" method="post" class="d-flex align-items-center m-0">
+                                        <button type="submit" class="btn btn-link p-0 text-dark">Log off</button>
+                                    </form>
+                                } else {
+                                    <form asp-page="/Admin/Impersonate" asp-page-handler="Stop" class="m-0">
+                                        <button type="submit" class="btn btn-link p-0 text-dark">Leave</button>
+                                    </form>
+                                }
                             </li>
                         }
                         else
