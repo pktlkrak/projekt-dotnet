@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,10 +15,12 @@ namespace ClinicManager.Views.Patients
     public class CreateModel : PageModel
     {
         private readonly ClinicManager.Data.AppDbContext _context;
+        private readonly ILogger<CreateModel> _logger;
 
-        public CreateModel(ClinicManager.Data.AppDbContext context)
+        public CreateModel(ClinicManager.Data.AppDbContext context, ILogger<CreateModel> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public IActionResult OnGet()
@@ -42,6 +44,8 @@ namespace ClinicManager.Views.Patients
 
             _context.Patients.Add(Patient);
             await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Patient {PatientId} ({LastName}) created", Patient.Id, Patient.LastName);
 
             return RedirectToPage("./Index");
         }

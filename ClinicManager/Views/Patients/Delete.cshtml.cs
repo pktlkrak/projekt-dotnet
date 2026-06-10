@@ -1,4 +1,4 @@
-﻿using ClinicManager.Data;
+using ClinicManager.Data;
 using ClinicManager.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,10 +16,12 @@ namespace ClinicManager.Views.Patients
     public class DeleteModel : PageModel
     {
         private readonly ClinicManager.Data.AppDbContext _context;
+        private readonly ILogger<DeleteModel> _logger;
 
-        public DeleteModel(ClinicManager.Data.AppDbContext context)
+        public DeleteModel(ClinicManager.Data.AppDbContext context, ILogger<DeleteModel> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         [BindProperty]
@@ -41,6 +43,7 @@ namespace ClinicManager.Views.Patients
                 return Page();
             }
 
+            _logger.LogWarning("Delete requested for non-existent patient {PatientId}", id);
             return NotFound();
         }
 
@@ -58,6 +61,7 @@ namespace ClinicManager.Views.Patients
                 patient.IsDeleted = true;
                 _context.Patients.Update(patient);
                 await _context.SaveChangesAsync();
+                _logger.LogInformation("Patient {PatientId} ({LastName}) soft-deleted", patient.Id, patient.LastName);
             }
 
             return RedirectToPage("./Index");

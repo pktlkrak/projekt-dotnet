@@ -1,4 +1,4 @@
-﻿using ClinicManager.Data;
+using ClinicManager.Data;
 using ClinicManager.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,10 +16,12 @@ namespace ClinicManager.Views.Patients
     public class IndexModel : PageModel
     {
         private readonly ClinicManager.Data.AppDbContext _context;
+        private readonly ILogger<IndexModel> _logger;
 
-        public IndexModel(ClinicManager.Data.AppDbContext context)
+        public IndexModel(ClinicManager.Data.AppDbContext context, ILogger<IndexModel> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public IList<Patient> Patient { get;set; } = default!;
@@ -41,12 +43,15 @@ namespace ClinicManager.Views.Patients
             // Search by PESEL or Surname
             if (!string.IsNullOrWhiteSpace(SearchQuery))
             {
-                query = query.Where(p => 
-                    p.Pesel.Contains(SearchQuery) || 
+                query = query.Where(p =>
+                    p.Pesel.Contains(SearchQuery) ||
                     p.LastName.Contains(SearchQuery));
             }
 
             Patient = await query.ToListAsync();
+
+            _logger.LogInformation("Patient list loaded: {Count} records (showDeleted={ShowDeleted}, search={Search})",
+                Patient.Count, ShowDeleted, SearchQuery);
         }
     }
 }

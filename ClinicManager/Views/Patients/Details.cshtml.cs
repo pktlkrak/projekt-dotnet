@@ -1,4 +1,4 @@
-﻿using ClinicManager.Data;
+using ClinicManager.Data;
 using ClinicManager.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,10 +16,12 @@ namespace ClinicManager.Views.Patients
     public class DetailsModel : PageModel
     {
         private readonly ClinicManager.Data.AppDbContext _context;
+        private readonly ILogger<DetailsModel> _logger;
 
-        public DetailsModel(ClinicManager.Data.AppDbContext context)
+        public DetailsModel(ClinicManager.Data.AppDbContext context, ILogger<DetailsModel> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public Patient Patient { get; set; } = default!;
@@ -40,6 +42,7 @@ namespace ClinicManager.Views.Patients
                 return Page();
             }
 
+            _logger.LogWarning("Details requested for non-existent patient {PatientId}", id);
             return NotFound();
         }
     }

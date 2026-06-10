@@ -1,4 +1,4 @@
-﻿using ClinicManager.Data;
+using ClinicManager.Data;
 using ClinicManager.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,10 +17,12 @@ namespace ClinicManager.Views.Patients
     public class EditModel : PageModel
     {
         private readonly ClinicManager.Data.AppDbContext _context;
+        private readonly ILogger<EditModel> _logger;
 
-        public EditModel(ClinicManager.Data.AppDbContext context)
+        public EditModel(ClinicManager.Data.AppDbContext context, ILogger<EditModel> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         [BindProperty]
@@ -36,6 +38,7 @@ namespace ClinicManager.Views.Patients
             var patient =  await _context.Patients.FirstOrDefaultAsync(m => m.Id == id);
             if (patient == null)
             {
+                _logger.LogWarning("Edit requested for non-existent patient {PatientId}", id);
                 return NotFound();
             }
             Patient = patient;
@@ -55,6 +58,7 @@ namespace ClinicManager.Views.Patients
             var existingPatient = await _context.Patients.FindAsync(Patient.Id);
             if (existingPatient == null)
             {
+                _logger.LogWarning("Edit post for non-existent patient {PatientId}", Patient.Id);
                 return NotFound();
             }
 
@@ -71,8 +75,9 @@ namespace ClinicManager.Views.Patients
             try
             {
                 await _context.SaveChangesAsync();
+                _logger.LogInformation("Patient {PatientId} ({LastName}) updated", existingPatient.Id, existingPatient.LastName);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException ex)
             {
                 if (!PatientExists(Patient.Id))
                 {
@@ -80,6 +85,7 @@ namespace ClinicManager.Views.Patients
                 }
                 else
                 {
+                    _logger.LogError(ex, "Concurrency conflict updating patient {PatientId}", Patient.Id);
                     throw;
                 }
             }

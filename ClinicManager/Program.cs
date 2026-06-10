@@ -3,8 +3,15 @@ using ClinicManager.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using NLog;
+using NLog.Web;
+
+var logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
+logger.Info("Starting ClinicManager");
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Logging.ClearProviders();
+builder.Host.UseNLog();
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
@@ -93,6 +100,22 @@ using (var scope = app.Services.CreateScope())
 
 
 // Configure the HTTP request pipeline.
+// Universal catch-all exception handler for the logger:
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next(context);
+    }
+    catch (Exception ex)
+    {
+        var pipelineLogger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+        pipelineLogger.LogError(ex, "Unhandled exception for {Method} {Path}",
+            context.Request.Method, context.Request.Path);
+        throw;
+    }
+});
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
