@@ -1,0 +1,70 @@
+@page
+@model ClinicManager.Views.Doctor.DoctorIndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Dashboard</h2>
+    <span class="text-muted small">@DateTime.Today.ToString("dddd, d MMMM yyyy")</span>
+</div>
+
+<div class="row g-4">
+    <!-- Today's upcoming appointments -->
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="mb-0">Today's Upcoming Appointments</h5>
+            </div>
+            <div class="card-body p-0">
+                @if (!Model.TodayVisits.Any())
+                {
+                    <p class="text-muted p-3 mb-0">No appointments scheduled for today.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Patient</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var v in Model.TodayVisits)
+                                {
+                                    <tr>
+                                        <td class="align-middle fw-semibold">@v.ScheduledAt.ToString("HH:mm")</td>
+                                        <td class="align-middle">@v.Patient?.LastName @v.Patient?.FirstName</td>
+                                        <td class="align-middle">
+                                            <span class="badge @StatusBadge(v.Status)">@v.Status</span>
+                                        </td>
+                                        <td class="text-end align-middle">
+                                            <a asp-page="/Visits/Edit" asp-route-id="@v.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--Todo: Add some kind of archive here... -->
+
+@functions {
+    string StatusBadge(ClinicManager.Models.VisitStatus s) => s switch
+    {
+        ClinicManager.Models.VisitStatus.Scheduled  => "bg-primary",
+        ClinicManager.Models.VisitStatus.InProgress => "bg-warning text-dark",
+        ClinicManager.Models.VisitStatus.Finished   => "bg-success",
+        ClinicManager.Models.VisitStatus.Cancelled  => "bg-secondary",
+        _ => "bg-light text-dark"
+    };
+}

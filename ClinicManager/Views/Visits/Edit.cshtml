@@ -1,0 +1,120 @@
+@page
+@model ClinicManager.Views.Visits.EditModel
+@{
+    ViewData["Title"] = "Edit Appointment";
+}
+
+<div class="d-flex align-items-center mb-4 gap-3">
+    <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">← Back</a>
+    <h2 class="mb-0">Edit Appointment</h2>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.StatusMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @Model.StatusMessage
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 text-muted text-uppercase small fw-semibold">Appointment Info</h6>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-5 text-muted">Patient</dt>
+                    <dd class="col-7">@Model.Visit.Patient?.LastName @Model.Visit.Patient?.FirstName</dd>
+                    <dt class="col-5 text-muted">Doctor</dt>
+                    <dd class="col-7">@Model.Visit.Doctor?.LastName @Model.Visit.Doctor?.FirstName</dd>
+                    <dt class="col-5 text-muted">Scheduled</dt>
+                    <dd class="col-7">@Model.Visit.ScheduledAt.ToString("d MMM yyyy HH:mm")</dd>
+                    <dt class="col-5 text-muted">Status</dt>
+                    <dd class="col-7">
+                        <span class="badge @StatusBadge(Model.Visit.Status)">@Model.Visit.Status</span>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3">
+                <h6 class="mb-0 text-muted text-uppercase small fw-semibold">
+                    @if (User.IsInRole("Doctor"))
+                    { <text>Clinical Notes</text> }
+                    else
+                    { <text>Appointment Details</text> }
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                    <input type="hidden" asp-for="Visit.Id" />
+
+                    @if (!User.IsInRole("Doctor"))
+                    {
+                        <!-- Scheduling fields for Admin or Registrar - Doctors do not need access to this. -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="Visit.ScheduledAt" class="form-label">Scheduled Time</label>
+                                <input asp-for="Visit.ScheduledAt" type="datetime-local" class="form-control" />
+                                <span asp-validation-for="Visit.ScheduledAt" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Visit.Status" class="form-label">Status</label>
+                                <select asp-for="Visit.Status" asp-items="Html.GetEnumSelectList<ClinicManager.Models.VisitStatus>()" class="form-select"></select>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="mb-3">
+                            <label asp-for="Visit.Status" class="form-label">Status</label>
+                            <select asp-for="Visit.Status" asp-items="Html.GetEnumSelectList<ClinicManager.Models.VisitStatus>()" class="form-select"></select>
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <label asp-for="Visit.Survey" class="form-label">Interview / Wywiad</label>
+                        <textarea asp-for="Visit.Survey" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="Visit.Survey" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Visit.Diagnosis" class="form-label">Diagnosis / Rozpoznanie</label>
+                        <textarea asp-for="Visit.Diagnosis" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="Visit.Diagnosis" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Visit.Recommendations" class="form-label">Recommendations / Zalecenia</label>
+                        <textarea asp-for="Visit.Recommendations" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="Visit.Recommendations" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <a href="javascript:history.back()" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string StatusBadge(ClinicManager.Models.VisitStatus s) => s switch
+    {
+        ClinicManager.Models.VisitStatus.Scheduled  => "bg-primary",
+        ClinicManager.Models.VisitStatus.InProgress => "bg-warning text-dark",
+        ClinicManager.Models.VisitStatus.Finished   => "bg-success",
+        ClinicManager.Models.VisitStatus.Cancelled  => "bg-secondary",
+        _ => "bg-light text-dark"
+    };
+}
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

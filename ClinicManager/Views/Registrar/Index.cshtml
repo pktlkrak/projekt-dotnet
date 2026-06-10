@@ -1,0 +1,79 @@
+@page
+@model ClinicManager.Views.Registrar.RegistrarIndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<h2 class="mb-3">Dashboard</h2>
+
+<div class="d-flex gap-3" style="height: calc(100vh - 160px); min-height: 400px;">
+
+    @* Patients column *@
+    <div class="d-flex flex-column flex-grow-1" style="min-width: 0;">
+        <div class="card border-0 shadow-sm d-flex flex-column h-100 overflow-hidden">
+            <div class="card-header bg-white border-bottom py-2">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0">Patients</h5>
+                    <a asp-page="/Patients/Create" class="btn btn-primary btn-sm">+ Add</a>
+                </div>
+                <form method="get">
+                    <div class="input-group input-group-sm">
+                        <input type="text" name="search" value="@Model.Search" class="form-control" placeholder="Search by name or PESEL…" />
+                        <button type="submit" class="btn btn-outline-secondary">Search</button>
+                        @if (!string.IsNullOrWhiteSpace(Model.Search))
+                        {
+                            <a asp-page="./Index" class="btn btn-outline-danger">Clear</a>
+                        }
+                    </div>
+                </form>
+            </div>
+            <div class="overflow-auto flex-grow-1">
+                @if (!Model.Patients.Any())
+                {
+                    <p class="text-muted p-3 mb-0">
+                        @(string.IsNullOrWhiteSpace(Model.Search) ? "No patients in the system." : $"No patients found for \"{Model.Search}\".")
+                    </p>
+                }
+                else
+                {
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th>Name</th>
+                                <th>PESEL</th>
+                                <th>Phone</th>
+                                <th>DOB</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in Model.Patients)
+                            {
+                                <tr>
+                                    <td class="align-middle">@p.LastName @p.FirstName</td>
+                                    <td class="align-middle text-muted small">@p.Pesel</td>
+                                    <td class="align-middle text-muted small">@p.PhoneNumber</td>
+                                    <td class="align-middle text-muted small">@p.DateOfBirth.ToString("d")</td>
+                                    <td class="text-end align-middle">
+                                        <div class="d-flex gap-1 justify-content-end">
+                                            <a asp-page="/Visits/Create"
+                                               asp-route-patientId="@p.Id"
+                                               class="btn btn-primary btn-sm">Register visit</a>
+                                            <a asp-page="/Patients/Edit"
+                                               asp-route-id="@p.Id"
+                                               class="btn btn-outline-secondary btn-sm">Edit</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+
+    @* Medications column *@
+    @await Html.PartialAsync("_MedicationsList", (Model.Medications, "/Registrar/Index"))
+
+</div>
