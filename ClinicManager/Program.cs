@@ -23,7 +23,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 {
     options.User.RequireUniqueEmail = true;
-    options.SignIn.RequireConfirmedAccount = false;
+    options.SignIn.RequireConfirmedAccount = true;
 })
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
@@ -43,6 +43,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 
 builder.Services.AddRazorPages().WithRazorPagesRoot("/Views");
+builder.Services.AddSession();
 
 var app = builder.Build();
 
@@ -57,44 +58,7 @@ using (var scope = app.Services.CreateScope())
         }
     }
 
-    // THIS IS FOR TESTING PURPOSES ONLY - DO NOT USE IN PRODUCTION ENVIRONMENT
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-    // Create default Admin user
-    var adminEmail = "admin@clinic.local";
-    if (await userManager.FindByEmailAsync(adminEmail) == null)
-    {
-        var adminUser = new ApplicationUser
-        {
-            UserName = adminEmail,
-            Email = adminEmail,
-            EmailConfirmed = true
-        };
-
-        var result = await userManager.CreateAsync(adminUser, "Admin123!");
-        if (result.Succeeded)
-        {
-            await userManager.AddToRoleAsync(adminUser, "Admin");
-        }
-    }
-
-    // Create default Receptionist user for testing
-    var receptionistEmail = "receptionist@clinic.local";
-    if (await userManager.FindByEmailAsync(receptionistEmail) == null)
-    {
-        var receptionistUser = new ApplicationUser
-        {
-            UserName = receptionistEmail,
-            Email = receptionistEmail,
-            EmailConfirmed = true
-        };
-
-        var result = await userManager.CreateAsync(receptionistUser, "Reception123!");
-        if (result.Succeeded)
-        {
-            await userManager.AddToRoleAsync(receptionistUser, "RegistrationWorker");
-        }
-    }
 }
 
 
@@ -129,6 +93,7 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseSession();
 
 app.MapStaticAssets();
 app.MapRazorPages()
