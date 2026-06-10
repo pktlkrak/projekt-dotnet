@@ -1,25 +1,26 @@
-﻿namespace ClinicManager.Models
+namespace ClinicManager.Models
 {
     public class Visit
     {
         public int Id { get; set; }
         public int PatientId { get; set; }
-        public int DoctorId { get; set; }
+        public string DoctorId { get; set; } = "";
 
-        public VisitStastus Status { get; set; }
+        public DateTime ScheduledAt { get; set; }
+        public VisitStatus Status { get; set; }
 
-        public ICollection<Procedure> Procedures { get; set; }
-        public ICollection<Perscription> Reciepts { get; set; }
+        public Patient? Patient { get; set; }
+        public ApplicationUser? Doctor { get; set; }
 
-        // Notatki Kliniczne
+        public ICollection<Procedure> Procedures { get; set; } = new List<Procedure>();
+        public ICollection<Perscription> Reciepts { get; set; } = new List<Perscription>();
 
-        public string Survey { get; set; } // wywiad
-        public string Diagnosis { get; set; } // rozpoznanie
-        public string Recommendations { get; set; } // zalecenia
-
+        public string Survey { get; set; } = "";
+        public string Diagnosis { get; set; } = "";
+        public string Recommendations { get; set; } = "";
     }
 
-    public enum VisitStastus
+    public enum VisitStatus
     {
         Scheduled,
         InProgress,
