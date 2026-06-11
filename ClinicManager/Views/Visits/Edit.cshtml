@@ -54,6 +54,7 @@
                 <form method="post">
                     <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
                     <input type="hidden" asp-for="Visit.Id" />
+                    <input type="hidden" asp-for="ReturnUrl" />
 
                     @if (!User.IsInRole("Doctor"))
                     {
@@ -95,6 +96,10 @@
                     </div>
 
                     <div class="d-flex gap-2">
+                        @if (User.IsInRole("Doctor"))
+                        {
+                            <button type="submit" asp-page-handler="Finish" class="btn btn-success">Finish and save</button>
+                        }
                         <button type="submit" class="btn btn-primary">Save Changes</button>
                         <a href="javascript:history.back()" class="btn btn-outline-secondary">Cancel</a>
                     </div>
@@ -103,6 +108,155 @@
         </div>
     </div>
 </div>
+
+@if (User.IsInRole("Doctor"))
+{
+    @using System.Text.Json
+    var costsJson = JsonSerializer.Serialize(Model.MedicationCosts);
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 text-muted text-uppercase small fw-semibold">Prescriptions</h6>
+                    <button class="btn btn-primary btn-sm" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#add-prescription-form">
+                        + Add Prescription
+                    </button>
+                </div>
+
+                <!-- Inline add-prescription form -->
+                <div id="add-prescription-form" class="collapse border-bottom">
+                    <div class="p-3">
+                        <form method="post" asp-page-handler="AddPrescription">
+                            <input type="hidden" asp-for="NewPrescription.VisitId" />
+
+                            <div class="mb-3">
+                                <label asp-for="NewPrescription.Description" class="form-label">Description / Opis</label>
+                                <textarea asp-for="NewPrescription.Description" class="form-control" rows="2"
+                                          placeholder="Optional notes about this prescription"></textarea>
+                            </div>
+
+                            <h6 class="text-muted small fw-semibold mb-2">Medications</h6>
+                            <div id="rx-items-container"></div>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mb-3" onclick="addRxRow()">+ Add Medication</button>
+
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary btn-sm">Save Prescription</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                        data-bs-toggle="collapse" data-bs-target="#add-prescription-form">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Existing prescriptions -->
+                <div class="card-body p-0">
+                    @if (!Model.Visit.Reciepts.Any())
+                    {
+                        <p class="text-muted p-3 mb-0">No prescriptions for this visit.</p>
+                    }
+                    else
+                    {
+                        @foreach (var (rx, i) in Model.Visit.Reciepts.Select((r, idx) => (r, idx)))
+                        {
+                            <div class="px-3 pt-3 @(i > 0 ? "border-top" : "")">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-semibold">Prescription #@(i + 1)</span>
+                                    <form method="post" asp-page-handler="DeletePrescription"
+                                          onsubmit="return confirm('Delete this prescription?')">
+                                        <input type="hidden" name="prescriptionId" value="@rx.Id" />
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                                    </form>
+                                </div>
+                                <table class="table table-sm mb-2">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Medication</th>
+                                            <th>Dosage</th>
+                                            <th>Amount</th>
+                                            <th class="text-end">Price</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in rx.PerscriptionItem)
+                                        {
+                                            <tr>
+                                                <td>@item.Medication?.Name</td>
+                                                <td>@item.Dosage</td>
+                                                <td>@item.Amount</td>
+                                                <td class="text-end">@item.Price.ToString("C")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="fw-semibold">
+                                            <td colspan="3" class="text-end text-muted small">Total</td>
+                                            <td class="text-end">@rx.PerscriptionItem.Sum(it => it.Price).ToString("C")</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        }
+                        <div class="pb-1"></div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <template id="rx-row-template">
+        <div class="row g-2 mb-2 align-items-end rx-item-row">
+            <div class="col-md-4">
+                <label class="form-label small">Medication</label>
+                <select name="NewPrescription.Items[__idx__].MedicationId" class="form-select rx-med-select" required>
+                    <option value="">— select —</option>
+                    @foreach (var m in Model.MedicationItems)
+                    {
+                        <option value="@m.Value">@m.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Dosage</label>
+                <input name="NewPrescription.Items[__idx__].Dosage" class="form-control" placeholder="e.g. 2x daily" required />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Amount</label>
+                <input name="NewPrescription.Items[__idx__].Amount" class="form-control" placeholder="e.g. 30 tabs" required />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Price (PLN)</label>
+                <input name="NewPrescription.Items[__idx__].Price" type="number" step="0.01" min="0" class="form-control rx-price-input" required />
+            </div>
+            <div class="col-md-1 d-flex pb-1">
+                <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeRxRow(this)">✕</button>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        const rxCosts = @Html.Raw(costsJson);
+        let rxRowIndex = 0;
+
+        function addRxRow() {
+            const template = document.getElementById('rx-row-template');
+            const clone = template.content.cloneNode(true);
+            const row = clone.querySelector('.rx-item-row');
+            row.innerHTML = row.innerHTML.replaceAll('__idx__', rxRowIndex++);
+            row.querySelector('.rx-med-select').addEventListener('change', function () {
+                const id = parseInt(this.value);
+                const priceInput = this.closest('.rx-item-row').querySelector('.rx-price-input');
+                if (rxCosts[id] !== undefined) priceInput.value = rxCosts[id].toFixed(2);
+            });
+            document.getElementById('rx-items-container').appendChild(clone);
+        }
+
+        function removeRxRow(btn) {
+            btn.closest('.rx-item-row').remove();
+        }
+    </script>
+}
 
 @functions {
     string StatusBadge(ClinicManager.Models.VisitStatus s) => s switch
