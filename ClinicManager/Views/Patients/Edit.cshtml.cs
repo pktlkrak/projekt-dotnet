@@ -28,6 +28,9 @@ namespace ClinicManager.Views.Patients
         [BindProperty]
         public Patient Patient { get; set; } = default!;
 
+        [BindProperty(SupportsGet = true)]
+        public string ReturnUrl { get; set; } = "/Patients/Index";
+
         public async Task<IActionResult> OnGetAsync(int? id)
         {
             if (id == null)
@@ -90,7 +93,7 @@ namespace ClinicManager.Views.Patients
                 }
             }
 
-            return RedirectToPage("./Index");
+            return LocalRedirect(ReturnUrl);
         }
 
         private bool PatientExists(int id)

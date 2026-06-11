@@ -26,6 +26,9 @@ namespace ClinicManager.Views.Patients
 
         public Patient Patient { get; set; } = default!;
 
+        [BindProperty(SupportsGet = true)]
+        public string ReturnUrl { get; set; } = "/Patients/Index";
+
         public async Task<IActionResult> OnGetAsync(int? id)
         {
             if (id == null)
@@ -44,6 +47,19 @@ namespace ClinicManager.Views.Patients
 
             _logger.LogWarning("Details requested for non-existent patient {PatientId}", id);
             return NotFound();
+        }
+
+        public async Task<IActionResult> OnPostDeleteAsync(int id)
+        {
+            var patient = await _context.Patients.FindAsync(id);
+            if (patient != null)
+            {
+                patient.IsDeleted = true;
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Patient {PatientId} ({LastName}) soft-deleted", patient.Id, patient.LastName);
+            }
+
+            return LocalRedirect(ReturnUrl);
         }
     }
 }

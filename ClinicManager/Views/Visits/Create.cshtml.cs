@@ -52,7 +52,7 @@ namespace ClinicManager.Views.Visits
             if (!ModelState.IsValid)
             {
                 await LoadSelectsAsync();
-                return Page();
+                return Page();  
             }
 
             _context.Visits.Add(Visit);
