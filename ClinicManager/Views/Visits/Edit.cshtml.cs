@@ -1,6 +1,8 @@
 using System.Globalization;
+using System.Text;
 using ClinicManager.Data;
 using ClinicManager.Models;
+using ClinicManager.Utils.PDF;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -59,6 +61,121 @@ namespace ClinicManager.Views.Visits
                 ReturnUrl = refUri.PathAndQuery;
 
             return Page();
+        }
+
+        public async Task<IActionResult> OnGetPdfAsync(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var visit = await LoadVisitAsync(id.Value);
+            if (visit == null) return NotFound();
+
+            if (User.IsInRole("Doctor"))
+            {
+                var userId = _userManager.GetUserId(User);
+                if (visit.DoctorId != userId) return Forbid();
+            }
+
+            var patient = visit.Patient;
+            var doctor = visit.Doctor;
+
+            var patientInfo = new StringBuilder();
+            if (patient != null)
+            {
+                patientInfo.AppendLine($"{patient.LastName} {patient.FirstName}");
+                patientInfo.AppendLine($"PESEL: {patient.Pesel}");
+                patientInfo.AppendLine($"DOB: {patient.DateOfBirth:d MMM yyyy}");
+                patientInfo.AppendLine($"Phone: {patient.PhoneNumber}");
+                patientInfo.Append($"Insurance: {patient.InsuranceNumber}");
+            }
+
+            var visitInfo = new StringBuilder();
+            visitInfo.AppendLine($"Date: {visit.ScheduledAt:d MMM yyyy HH:mm}");
+            visitInfo.Append($"Doctor: {doctor?.LastName} {doctor?.FirstName}");
+
+            var prescriptionSections = visit.Reciepts.Select((rx, i) =>
+            {
+                var sb = new StringBuilder();
+                foreach (var item in rx.PerscriptionItem)
+                    sb.AppendLine($"• {item.Medication?.Name}  |  {item.Dosage}  |  {item.Amount}  |  {item.Price:C}");
+                sb.Append($"Total: {rx.PerscriptionItem.Sum(it => it.Price):C}");
+                return new PdfSection($"Prescription #{i + 1}", sb.ToString());
+            }).ToArray();
+
+            var data = new PdfReportData(
+                $"Visit Report — {patient?.LastName} {patient?.FirstName}",
+                $"{visit.ScheduledAt:d MMM yyyy}  ·  Dr. {doctor?.LastName} {doctor?.FirstName}"
+            )
+            {
+                TopLeft = [new("Patient", patientInfo.ToString().TrimEnd())],
+                TopRight = [new("Visit", visitInfo.ToString().TrimEnd())],
+                Middle =
+                [
+                    new("Interview", string.IsNullOrWhiteSpace(visit.Survey) ? "—" : visit.Survey),
+                    new("Diagnosis", string.IsNullOrWhiteSpace(visit.Diagnosis) ? "—" : visit.Diagnosis),
+                    new("Recommendations", string.IsNullOrWhiteSpace(visit.Recommendations) ? "—" : visit.Recommendations),
+                ],
+                BottomLeft = prescriptionSections.Length > 0 ? prescriptionSections : [new("Prescriptions", "None")],
+            };
+
+            var bytes = PdfReportWriter.GenerateBytes(data);
+            var filename = $"visit-{visit.Id}-{patient?.LastName?.ToLower()}.pdf";
+            return File(bytes, "application/pdf", filename);
+        }
+
+        public async Task<IActionResult> OnGetPrescriptionPdfAsync(int? id, int prescriptionId)
+        {
+            if (id == null) return NotFound();
+
+            var visit = await LoadVisitAsync(id.Value);
+            if (visit == null) return NotFound();
+
+            if (User.IsInRole("Doctor"))
+            {
+                var userId = _userManager.GetUserId(User);
+                if (visit.DoctorId != userId) return Forbid();
+            }
+
+            var rx = visit.Reciepts
+                .Select((r, i) => (r, i))
+                .FirstOrDefault(t => t.r.Id == prescriptionId);
+
+            if (rx.r == null) return NotFound();
+
+            var patient = visit.Patient;
+            var doctor = visit.Doctor;
+            var index = rx.i + 1;
+
+            var patientInfo = new StringBuilder();
+            if (patient != null)
+            {
+                patientInfo.AppendLine($"{patient.LastName} {patient.FirstName}");
+                patientInfo.AppendLine($"PESEL: {patient.Pesel}");
+                patientInfo.Append($"DOB: {patient.DateOfBirth:d MMM yyyy}");
+            }
+
+            var visitInfo = new StringBuilder();
+            visitInfo.AppendLine($"Date: {visit.ScheduledAt:d MMM yyyy HH:mm}");
+            visitInfo.Append($"Doctor: {doctor?.LastName} {doctor?.FirstName}");
+
+            var itemsText = new StringBuilder();
+            foreach (var item in rx.r.PerscriptionItem)
+                itemsText.AppendLine($"• {item.Medication?.Name}  |  {item.Dosage}  |  {item.Amount}  |  {item.Price:C}");
+            itemsText.Append($"Total: {rx.r.PerscriptionItem.Sum(it => it.Price):C}");
+
+            var data = new PdfReportData(
+                $"Prescription #{index} — {patient?.LastName} {patient?.FirstName}",
+                $"{visit.ScheduledAt:d MMM yyyy}  ·  Dr. {doctor?.LastName} {doctor?.FirstName}"
+            )
+            {
+                TopLeft = [new("Patient", patientInfo.ToString().TrimEnd())],
+                TopRight = [new("Visit", visitInfo.ToString().TrimEnd())],
+                BottomLeft = [new("Medications", itemsText.ToString().TrimEnd())],
+            };
+
+            var bytes = PdfReportWriter.GenerateBytes(data);
+            var filename = $"prescription-{index}-visit-{visit.Id}-{patient?.LastName?.ToLower()}.pdf";
+            return File(bytes, "application/pdf", filename);
         }
 
         public async Task<IActionResult> OnPostAsync()

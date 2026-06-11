@@ -58,7 +58,7 @@ namespace ClinicManager.Views.Visits
             _context.Visits.Add(Visit);
             await _context.SaveChangesAsync();
 
-            return RedirectToPage("/", new { doctorId = Visit.DoctorId });
+            return RedirectToPage("/Index", new { doctorId = Visit.DoctorId });
         }
 
         private async Task LoadSelectsAsync()
