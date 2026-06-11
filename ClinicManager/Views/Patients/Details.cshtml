@@ -62,6 +62,43 @@
     </dl>
 </div>
 <div>
+    <h4>Visits</h4>
+    <hr />
+    @if (!Model.Visits.Any())
+    {
+        <p class="text-muted">No visits recorded.</p>
+    }
+    else
+    {
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Date</th>
+                    <th>Doctor</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var v in Model.Visits)
+                {
+                    <tr>
+                        <td class="align-middle">@v.ScheduledAt.ToString("g")</td>
+                        <td class="align-middle">@v.Doctor?.LastName @v.Doctor?.FirstName</td>
+                        <td class="align-middle">
+                            <span class="badge @StatusBadge(v.Status)">@v.Status</span>
+                        </td>
+                        <td class="text-end align-middle">
+                            <a asp-page="/Visits/Edit" asp-route-id="@v.Id" class="btn btn-sm btn-outline-primary">View</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+<div>
     <a asp-page="./Edit" asp-route-id="@Model.Patient.Id" asp-route-returnUrl="@Url.Page("./Details", new { id = Model.Patient.Id, returnUrl = Model.ReturnUrl })">Edit</a> |
     <a href="@Model.ReturnUrl">Back to List</a>
     @if (!Model.Patient.IsDeleted)
@@ -74,3 +111,14 @@
         </form>
     }
 </div>
+
+@functions {
+    string StatusBadge(ClinicManager.Models.VisitStatus s) => s switch
+    {
+        ClinicManager.Models.VisitStatus.Scheduled  => "bg-primary",
+        ClinicManager.Models.VisitStatus.InProgress => "bg-warning text-dark",
+        ClinicManager.Models.VisitStatus.Finished   => "bg-success",
+        ClinicManager.Models.VisitStatus.Cancelled  => "bg-secondary",
+        _ => "bg-light text-dark"
+    };
+}

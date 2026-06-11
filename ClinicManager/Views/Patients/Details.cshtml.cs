@@ -26,6 +26,8 @@ namespace ClinicManager.Views.Patients
 
         public Patient Patient { get; set; } = default!;
 
+        public List<Visit> Visits { get; set; } = new();
+
         [BindProperty(SupportsGet = true)]
         public string ReturnUrl { get; set; } = "/Patients/Index";
 
@@ -41,6 +43,12 @@ namespace ClinicManager.Views.Patients
             if (patient is not null)
             {
                 Patient = patient;
+
+                Visits = await _context.Visits
+                    .Include(v => v.Doctor)
+                    .Where(v => v.PatientId == id)
+                    .OrderByDescending(v => v.ScheduledAt)
+                    .ToListAsync();
 
                 return Page();
             }
