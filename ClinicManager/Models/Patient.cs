@@ -15,8 +15,6 @@ namespace ClinicManager.Models
 
         public string InsuranceNumber { get; set; }
 
-
-        ICollection<string> PathToMedicalRecords { get; set; } // ścierzki do zdj skanów w wwwroot/uploads (kartoteka)
         ICollection<Visit> Visits { get; set; } = new List<Visit>();
     }
 }
