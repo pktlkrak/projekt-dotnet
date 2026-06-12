@@ -1,42 +1,33 @@
-using ClinicManager.Data;
+using ClinicManager.Dtos.Visits;
 using ClinicManager.Models;
+using ClinicManager.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManager.Views.Doctor
 {
     [Authorize(Roles = "Doctor")]
     public class DoctorIndexModel : PageModel
     {
-        private readonly AppDbContext _context;
+        private readonly IVisitService _visitService;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public DoctorIndexModel(AppDbContext context, UserManager<ApplicationUser> userManager)
+        public DoctorIndexModel(IVisitService visitService, UserManager<ApplicationUser> userManager)
         {
-            _context = context;
+            _visitService = visitService;
             _userManager = userManager;
         }
 
-        public List<Visit> TodayVisits { get; set; } = new();
+        public List<VisitDto> TodayVisits { get; set; } = new();
 
         public async Task<IActionResult> OnGetAsync()
         {
             var doctorId = _userManager.GetUserId(User);
             if (doctorId == null) return RedirectToPage("/Index");
 
-            var today = DateTime.Today;
-            var tomorrow = today.AddDays(1);
-
-            TodayVisits = await _context.Visits
-                .Include(v => v.Patient)
-                .Where(v => v.DoctorId == doctorId
-                    && v.ScheduledAt >= today
-                    && v.ScheduledAt < tomorrow)
-                .OrderBy(v => v.ScheduledAt)
-                .ToListAsync();
+            TodayVisits = await _visitService.GetTodaysVisitsForDoctorAsync(doctorId);
 
             return Page();
         }

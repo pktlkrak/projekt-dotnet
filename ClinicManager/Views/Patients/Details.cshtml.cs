@@ -1,36 +1,36 @@
-using ClinicManager.Data;
+using ClinicManager.Dtos.MedicalFiles;
 using ClinicManager.Dtos.Patients;
-using ClinicManager.Models;
+using ClinicManager.Dtos.Visits;
 using ClinicManager.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
-
 
 namespace ClinicManager.Views.Patients
 {
     [Authorize(Roles = "Admin,RegistrationWorker")]
     public class DetailsModel : PageModel
     {
-        private readonly ClinicManager.Data.AppDbContext _context;
         private readonly IPatientService _patientService;
+        private readonly IVisitService _visitService;
+        private readonly IMedicalFileService _medicalFileService;
         private readonly ILogger<DetailsModel> _logger;
         private readonly IWebHostEnvironment _env;
 
-        public DetailsModel(AppDbContext context, IPatientService patientService, ILogger<DetailsModel> logger, IWebHostEnvironment env)
+        public DetailsModel(IPatientService patientService, IVisitService visitService, IMedicalFileService medicalFileService, ILogger<DetailsModel> logger, IWebHostEnvironment env)
         {
-            _context = context;
             _patientService = patientService;
+            _visitService = visitService;
+            _medicalFileService = medicalFileService;
             _logger = logger;
             _env = env;
         }
 
         public PatientDto Patient { get; set; } = default!;
 
-        public List<Visit> Visits { get; set; } = new();
+        public List<VisitDto> Visits { get; set; } = new();
 
-        public List<MedicalFile> MedicalFiles { get; set; } = new();
+        public List<MedicalFileDto> MedicalFiles { get; set; } = new();
 
         [BindProperty(SupportsGet = true)]
         public string ReturnUrl { get; set; } = "/Patients/Index";
@@ -48,15 +48,8 @@ namespace ClinicManager.Views.Patients
             {
                 Patient = patient;
 
-                Visits = await _context.Visits
-                    .Include(v => v.Doctor)
-                    .Where(v => v.PatientId == id)
-                    .OrderByDescending(v => v.ScheduledAt)
-                    .ToListAsync();
-
-                MedicalFiles = await _context.MedicalFiles
-                    .Where(m => m.PatientId == id)
-                    .ToListAsync();
+                Visits = await _visitService.GetVisitsForPatientAsync(id.Value);
+                MedicalFiles = await _medicalFileService.GetFilesForPatientAsync(id.Value);
 
                 return Page();
             }
@@ -105,12 +98,7 @@ namespace ClinicManager.Views.Patients
                 await file.CopyToAsync(stream);
             }
 
-            _context.MedicalFiles.Add(new MedicalFile
-            {
-                PatientId = patient.Id,
-                Path = $"medicalDocuments/{patient.Pesel}/{fileName}"
-            });
-            await _context.SaveChangesAsync();
+            await _medicalFileService.AddFileAsync(patient.Id, $"medicalDocuments/{patient.Pesel}/{fileName}");
 
             _logger.LogInformation("Uploaded document {FileName} for patient {PatientId}", fileName, patient.Id);
 
@@ -119,7 +107,7 @@ namespace ClinicManager.Views.Patients
 
         public async Task<IActionResult> OnPostDeleteFileAsync(int id, int fileId)
         {
-            var file = await _context.MedicalFiles.FindAsync(fileId);
+            var file = await _medicalFileService.GetFileAsync(fileId);
             if (file != null && file.PatientId == id)
             {
                 var fullPath = Path.Combine(_env.WebRootPath, file.Path);
@@ -128,8 +116,7 @@ namespace ClinicManager.Views.Patients
                     System.IO.File.Delete(fullPath);
                 }
 
-                _context.MedicalFiles.Remove(file);
-                await _context.SaveChangesAsync();
+                await _medicalFileService.DeleteFileAsync(fileId);
 
                 _logger.LogInformation("Deleted document {FileId} for patient {PatientId}", fileId, id);
             }
