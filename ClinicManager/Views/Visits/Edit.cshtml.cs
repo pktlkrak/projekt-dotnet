@@ -16,12 +16,14 @@ namespace ClinicManager.Views.Visits
     {
         private readonly IVisitService _visitService;
         private readonly IMedicationService _medicationService;
+        private readonly IProcedureService _procedureService;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public EditModel(IVisitService visitService, IMedicationService medicationService, UserManager<ApplicationUser> userManager)
+        public EditModel(IVisitService visitService, IMedicationService medicationService, IProcedureService procedureService, UserManager<ApplicationUser> userManager)
         {
             _visitService = visitService;
             _medicationService = medicationService;
+            _procedureService = procedureService;
             _userManager = userManager;
         }
 
@@ -39,6 +41,8 @@ namespace ClinicManager.Views.Visits
 
         public List<SelectListItem> MedicationItems { get; set; } = [];
         public Dictionary<int, double> MedicationCosts { get; set; } = [];
+        public List<SelectListItem> ProcedureItems { get; set; } = [];
+        public Dictionary<int, double> ProcedureCosts { get; set; } = [];
 
         public async Task<IActionResult> OnGetAsync(int? id)
         {
@@ -92,7 +96,16 @@ namespace ClinicManager.Views.Visits
 
             var visitInfo = new StringBuilder();
             visitInfo.AppendLine($"Date: {visit.ScheduledAt:d MMM yyyy HH:mm}");
-            visitInfo.Append($"Doctor: {doctor?.LastName} {doctor?.FirstName}");
+            visitInfo.AppendLine($"Doctor: {doctor?.LastName} {doctor?.FirstName}");
+            var allProcedures = await _procedureService.GetAllProceduresAsync();
+            if (visit.Procedures.Any())
+                foreach (var pr in visit.Procedures)
+                {
+                    var name = allProcedures.FirstOrDefault(p => p.Id == pr.ProcedureId)?.Name ?? "?";
+                    visitInfo.AppendLine($"• {name}: {pr.Cost:C}");
+                }
+            else
+                visitInfo.AppendLine("Procedures: —");
 
             var prescriptionSections = visit.Prescriptions.Select((rx, i) =>
             {
@@ -264,6 +277,10 @@ namespace ClinicManager.Views.Visits
             var meds = await _medicationService.GetAllMedicationsAsync();
             MedicationItems = [.. meds.Select(m => new SelectListItem(m.Name, m.Id.ToString()))];
             MedicationCosts = meds.ToDictionary(m => m.Id, m => m.Cost);
+
+            var procedures = await _procedureService.GetAllProceduresAsync();
+            ProcedureItems = [.. procedures.Select(p => new SelectListItem(p.Name, p.Id.ToString()))];
+            ProcedureCosts = procedures.ToDictionary(p => p.Id, p => p.Cost);
         }
     }
 }

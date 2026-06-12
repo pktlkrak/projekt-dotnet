@@ -14,20 +14,24 @@ namespace ClinicManager.Views.Visits
     {
         private readonly IVisitService _visitService;
         private readonly IPatientService _patientService;
+        private readonly IProcedureService _procedureService;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public CreateModel(IVisitService visitService, IPatientService patientService, UserManager<ApplicationUser> userManager)
+        public CreateModel(IVisitService visitService, IPatientService patientService, IProcedureService procedureService, UserManager<ApplicationUser> userManager)
         {
             _visitService = visitService;
             _patientService = patientService;
+            _procedureService = procedureService;
             _userManager = userManager;
         }
 
         [BindProperty]
         public VisitCreateDto Visit { get; set; } = new() { ScheduledAt = DateTime.Now.AddHours(1) };
 
-        public List<SelectListItem> PatientItems { get; set; } = new();
-        public List<SelectListItem> DoctorItems { get; set; } = new();
+        public List<SelectListItem> PatientItems { get; set; } = [];
+        public List<SelectListItem> DoctorItems { get; set; } = [];
+        public List<SelectListItem> ProcedureItems { get; set; } = [];
+        public Dictionary<int, double> ProcedureCosts { get; set; } = [];
 
         public async Task<IActionResult> OnGetAsync(string? doctorId = null, int? patientId = null)
         {
@@ -43,6 +47,9 @@ namespace ClinicManager.Views.Visits
 
         public async Task<IActionResult> OnPostAsync()
         {
+            if (!Visit.Procedures.Any())
+                ModelState.AddModelError("Visit.Procedures", "At least one procedure is required.");
+
             if (!ModelState.IsValid)
             {
                 await LoadSelectsAsync();
@@ -67,6 +74,12 @@ namespace ClinicManager.Views.Visits
                 .OrderBy(d => d.LastName)
                 .Select(d => new SelectListItem($"{d.LastName} {d.FirstName}", d.Id))
                 .ToList();
+
+            var procedures = await _procedureService.GetAllProceduresAsync();
+            ProcedureItems = procedures
+                .Select(p => new SelectListItem(p.Name, p.Id.ToString()))
+                .ToList();
+            ProcedureCosts = procedures.ToDictionary(p => p.Id, p => p.Cost);
         }
     }
 }

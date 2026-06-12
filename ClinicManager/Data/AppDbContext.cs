@@ -12,6 +12,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Patient> Patients { get; set; }
     public DbSet<Visit> Visits { get; set; }
     public DbSet<Procedure> Procedures { get; set; }
+    public DbSet<ProcedureRef> ProcedureRefs { get; set; }
     public DbSet<Medication> Medications { get; set; }
     public DbSet<Perscription> Perscriptions { get; set; }
     public DbSet<PerscriptionItem> PerscriptionItems { get; set; }
@@ -21,10 +22,16 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<Visit>()
-            .HasOne(v => v.Procedure)
+        modelBuilder.Entity<ProcedureRef>()
+            .HasOne(pr => pr.Visit)
+            .WithMany(v => v.Procedures)
+            .HasForeignKey(pr => pr.VisitId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ProcedureRef>()
+            .HasOne(pr => pr.Procedure)
             .WithMany()
-            .HasForeignKey("ProcedureId")
+            .HasForeignKey(pr => pr.ProcedureId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

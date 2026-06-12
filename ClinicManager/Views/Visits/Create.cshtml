@@ -33,6 +33,14 @@
                     </div>
 
                     <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label mb-0">Procedures</label>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addProcRow()">+ Add</button>
+                        </div>
+                        <div id="proc-container"></div>
+                    </div>
+
+                    <div class="mb-3">
                         <label asp-for="Visit.ScheduledAt" class="form-label">Date &amp; Time</label>
                         <input asp-for="Visit.ScheduledAt" type="datetime-local" class="form-control" />
                         <span asp-validation-for="Visit.ScheduledAt" class="text-danger small"></span>
@@ -53,6 +61,51 @@
     </div>
 </div>
 
+<template id="proc-row-template">
+    <div class="row g-2 mb-2 align-items-end proc-item-row">
+        <div class="col-md-7">
+            <select name="Visit.Procedures[__idx__].ProcedureId" class="form-select proc-select" required>
+                <option value="">— select procedure —</option>
+                @foreach (var p in Model.ProcedureItems)
+                {
+                    <option value="@p.Value">@p.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <input name="Visit.Procedures[__idx__].Cost" type="number" step="0.01" min="0"
+                   class="form-control proc-cost-input" placeholder="Cost (PLN)" required />
+        </div>
+        <div class="col-md-1 d-flex">
+            <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeProcRow(this)">✕</button>
+        </div>
+    </div>
+</template>
+
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @using System.Text.Json
+    <script>
+        const procedureCosts = @Html.Raw(JsonSerializer.Serialize(Model.ProcedureCosts));
+        let procRowIndex = 0;
+
+        function addProcRow() {
+            const template = document.getElementById('proc-row-template');
+            const clone = template.content.cloneNode(true);
+            const row = clone.querySelector('.proc-item-row');
+            row.innerHTML = row.innerHTML.replaceAll('__idx__', procRowIndex++);
+            row.querySelector('.proc-select').addEventListener('change', function () {
+                const id = parseInt(this.value);
+                const costInput = this.closest('.proc-item-row').querySelector('.proc-cost-input');
+                if (procedureCosts[id] !== undefined) costInput.value = procedureCosts[id].toFixed(2);
+            });
+            document.getElementById('proc-container').appendChild(clone);
+        }
+
+        function removeProcRow(btn) {
+            btn.closest('.proc-item-row').remove();
+        }
+
+        addProcRow();
+    </script>
 }

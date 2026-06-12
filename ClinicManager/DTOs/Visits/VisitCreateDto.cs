@@ -10,6 +10,8 @@ namespace ClinicManager.Dtos.Visits
         [Required(ErrorMessage = "Please select a doctor.")]
         public string DoctorId { get; set; } = "";
 
+        public List<ProcedureRefDto> Procedures { get; set; } = [];
+
         public DateTime ScheduledAt { get; set; }
         public VisitStatus Status { get; set; }
     }
