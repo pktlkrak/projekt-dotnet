@@ -7,61 +7,154 @@
 
 <h1>Details</h1>
 
-<div>
-    <h4>Patient</h4>
+<div class="row">
+    <div class="col-md-5">
+        <h4>Patient</h4>
+        <hr />
+        <dl class="row">
+            <dt class="col-sm-4">
+                @Html.DisplayNameFor(model => model.Patient.FirstName)
+            </dt>
+            <dd class="col-sm-8">
+                @Html.DisplayFor(model => model.Patient.FirstName)
+            </dd>
+            <dt class="col-sm-4">
+                @Html.DisplayNameFor(model => model.Patient.LastName)
+            </dt>
+            <dd class="col-sm-8">
+                @Html.DisplayFor(model => model.Patient.LastName)
+            </dd>
+            <dt class="col-sm-4">
+                @Html.DisplayNameFor(model => model.Patient.Pesel)
+            </dt>
+            <dd class="col-sm-8">
+                @Html.DisplayFor(model => model.Patient.Pesel)
+            </dd>
+            <dt class="col-sm-4">
+                @Html.DisplayNameFor(model => model.Patient.PhoneNumber)
+            </dt>
+            <dd class="col-sm-8">
+                @Html.DisplayFor(model => model.Patient.PhoneNumber)
+            </dd>
+            <dt class="col-sm-4">
+                @Html.DisplayNameFor(model => model.Patient.Email)
+            </dt>
+            <dd class="col-sm-8">
+                @Html.DisplayFor(model => model.Patient.Email)
+            </dd>
+            <dt class="col-sm-4">
+                @Html.DisplayNameFor(model => model.Patient.DateOfBirth)
+            </dt>
+            <dd class="col-sm-8">
+                @Html.DisplayFor(model => model.Patient.DateOfBirth)
+            </dd>
+            <dt class="col-sm-4">
+                @Html.DisplayNameFor(model => model.Patient.IsDeleted)
+            </dt>
+            <dd class="col-sm-8">
+                @Html.DisplayFor(model => model.Patient.IsDeleted)
+            </dd>
+            <dt class="col-sm-4">
+                @Html.DisplayNameFor(model => model.Patient.InsuranceNumber)
+            </dt>
+            <dd class="col-sm-8">
+                @Html.DisplayFor(model => model.Patient.InsuranceNumber)
+            </dd>
+        </dl>
+    </div>
+    <div class="col-md-7">
+        <h4>Documents</h4>
+        <hr />
+        @if (TempData["ErrorMessage"] is string errorMessage)
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+        @if (!Model.MedicalFiles.Any())
+        {
+            <p class="text-muted">No documents uploaded.</p>
+        }
+        else
+        {
+            <ul class="list-group mb-3">
+                @foreach (var file in Model.MedicalFiles)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="~/@file.Path" target="_blank">@System.IO.Path.GetFileName(file.Path)</a>
+                        <form asp-page-handler="DeleteFile" asp-route-id="@Model.Patient.Id" asp-route-fileId="@file.Id" method="post" class="d-inline"
+                              onsubmit="return confirm('Are you sure you want to delete this document?');">
+                            <input type="hidden" asp-for="ReturnUrl" />
+                            <button type="submit" class="btn btn-link p-0 align-baseline text-danger">Delete</button>
+                        </form>
+                    </li>
+                }
+            </ul>
+        }
+        <form asp-page-handler="Upload" asp-route-id="@Model.Patient.Id" method="post" enctype="multipart/form-data" class="d-flex gap-2">
+            <input type="hidden" asp-for="ReturnUrl" />
+            <input type="file" name="file" accept="image/*" class="form-control" required />
+            <button type="submit" class="btn btn-outline-primary text-nowrap">Upload</button>
+        </form>
+    </div>
+</div>
+
+<div class="mt-4">
+    <h4>Visits</h4>
     <hr />
-    <dl class="row">
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Patient.FirstName)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Patient.FirstName)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Patient.LastName)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Patient.LastName)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Patient.Pesel)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Patient.Pesel)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Patient.PhoneNumber)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Patient.PhoneNumber)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Patient.Email)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Patient.Email)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Patient.DateOfBirth)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Patient.DateOfBirth)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Patient.IsDeleted)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Patient.IsDeleted)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Patient.InsuranceNumber)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Patient.InsuranceNumber)
-        </dd>
-    </dl>
+    @if (!Model.Visits.Any())
+    {
+        <p class="text-muted">No visits recorded.</p>
+    }
+    else
+    {
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Date</th>
+                    <th>Doctor</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var v in Model.Visits)
+                {
+                    <tr>
+                        <td class="align-middle">@v.ScheduledAt.ToString("g")</td>
+                        <td class="align-middle">@v.Doctor?.LastName @v.Doctor?.FirstName</td>
+                        <td class="align-middle">
+                            <span class="badge @StatusBadge(v.Status)">@v.Status</span>
+                        </td>
+                        <td class="text-end align-middle">
+                            <a asp-page="/Visits/Edit" asp-route-id="@v.Id" class="btn btn-sm btn-outline-primary">View</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
 </div>
+
 <div>
-    <a asp-page="./Edit" asp-route-id="@Model.Patient.Id">Edit</a> |
-    <a asp-page="./Index">Back to List</a>
+    <a asp-page="./Edit" asp-route-id="@Model.Patient.Id" asp-route-returnUrl="@Url.Page("./Details", new { id = Model.Patient.Id, returnUrl = Model.ReturnUrl })">Edit</a> |
+    <a href="@Model.ReturnUrl">Back to List</a>
+    @if (!Model.Patient.IsDeleted)
+    {
+        <text> | </text>
+        <form asp-page-handler="Delete" asp-route-id="@Model.Patient.Id" method="post" class="d-inline"
+              onsubmit="return confirm('Are you sure you want to delete this patient?');">
+            <input type="hidden" asp-for="ReturnUrl" />
+            <button type="submit" class="btn btn-link p-0 align-baseline text-danger">Delete</button>
+        </form>
+    }
 </div>
+
+@functions {
+    string StatusBadge(ClinicManager.Models.VisitStatus s) => s switch
+    {
+        ClinicManager.Models.VisitStatus.Scheduled  => "bg-primary",
+        ClinicManager.Models.VisitStatus.InProgress => "bg-warning text-dark",
+        ClinicManager.Models.VisitStatus.Finished   => "bg-success",
+        ClinicManager.Models.VisitStatus.Cancelled  => "bg-secondary",
+        _ => "bg-light text-dark"
+    };
+}

@@ -190,9 +190,13 @@ namespace ClinicManager.Views.Visits
             }
 
             existing.Status = Visit.Status;
-            existing.Survey = Visit.Survey ?? "";
-            existing.Diagnosis = Visit.Diagnosis ?? "";
-            existing.Recommendations = Visit.Recommendations ?? "";
+
+            if (User.IsInRole("Doctor"))
+            {
+                existing.Survey = Visit.Survey ?? "";
+                existing.Diagnosis = Visit.Diagnosis ?? "";
+                existing.Recommendations = Visit.Recommendations ?? "";
+            }
 
             if (!User.IsInRole("Doctor"))
                 existing.ScheduledAt = Visit.ScheduledAt;

@@ -80,21 +80,39 @@
                         </div>
                     }
 
-                    <div class="mb-3">
-                        <label asp-for="Visit.Survey" class="form-label">Interview / Wywiad</label>
-                        <textarea asp-for="Visit.Survey" class="form-control" rows="3"></textarea>
-                        <span asp-validation-for="Visit.Survey" class="text-danger small"></span>
-                    </div>
-                    <div class="mb-3">
-                        <label asp-for="Visit.Diagnosis" class="form-label">Diagnosis / Rozpoznanie</label>
-                        <textarea asp-for="Visit.Diagnosis" class="form-control" rows="3"></textarea>
-                        <span asp-validation-for="Visit.Diagnosis" class="text-danger small"></span>
-                    </div>
-                    <div class="mb-3">
-                        <label asp-for="Visit.Recommendations" class="form-label">Recommendations / Zalecenia</label>
-                        <textarea asp-for="Visit.Recommendations" class="form-control" rows="3"></textarea>
-                        <span asp-validation-for="Visit.Recommendations" class="text-danger small"></span>
-                    </div>
+                    @if (User.IsInRole("Doctor"))
+                    {
+                        <div class="mb-3">
+                            <label asp-for="Visit.Survey" class="form-label">Interview / Wywiad</label>
+                            <textarea asp-for="Visit.Survey" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="Visit.Survey" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Visit.Diagnosis" class="form-label">Diagnosis / Rozpoznanie</label>
+                            <textarea asp-for="Visit.Diagnosis" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="Visit.Diagnosis" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Visit.Recommendations" class="form-label">Recommendations / Zalecenia</label>
+                            <textarea asp-for="Visit.Recommendations" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="Visit.Recommendations" class="text-danger small"></span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Interview / Wywiad</label>
+                            <p class="form-control-plaintext border rounded bg-light p-2" style="white-space: pre-wrap;">@(string.IsNullOrWhiteSpace(Model.Visit.Survey) ? "—" : Model.Visit.Survey)</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Diagnosis / Rozpoznanie</label>
+                            <p class="form-control-plaintext border rounded bg-light p-2" style="white-space: pre-wrap;">@(string.IsNullOrWhiteSpace(Model.Visit.Diagnosis) ? "—" : Model.Visit.Diagnosis)</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Recommendations / Zalecenia</label>
+                            <p class="form-control-plaintext border rounded bg-light p-2" style="white-space: pre-wrap;">@(string.IsNullOrWhiteSpace(Model.Visit.Recommendations) ? "—" : Model.Visit.Recommendations)</p>
+                        </div>
+                    }
 
                     <div class="d-flex gap-2">
                         @if (User.IsInRole("Doctor"))

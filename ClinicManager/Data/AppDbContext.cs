@@ -15,4 +15,5 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Medication> Medications { get; set; }
     public DbSet<Perscription> Perscriptions { get; set; }
     public DbSet<PerscriptionItem> PerscriptionItems { get; set; }
+    public DbSet<MedicalFile> MedicalFiles { get; set; }
 }

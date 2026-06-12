@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace ClinicManager.Views.Patients
 {
-    [Authorize(Roles = "Admin,RegistrationWorker")]
+    [Authorize(Roles = "Admin")]
 
     public class DeleteModel : PageModel
     {

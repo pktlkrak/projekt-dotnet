@@ -31,6 +31,9 @@ namespace ClinicManager.Views.Patients
         [BindProperty]
         public Patient Patient { get; set; } = default!;
 
+        [BindProperty(SupportsGet = true)]
+        public string ReturnUrl { get; set; } = "/Patients/Index";
+
         // For more information, see https://aka.ms/RazorPagesCRUD.
         public async Task<IActionResult> OnPostAsync()
         {
@@ -47,7 +50,7 @@ namespace ClinicManager.Views.Patients
 
             _logger.LogInformation("Patient {PatientId} ({LastName}) created", Patient.Id, Patient.LastName);
 
-            return RedirectToPage("./Index");
+            return LocalRedirect(ReturnUrl);
         }
     }
 }

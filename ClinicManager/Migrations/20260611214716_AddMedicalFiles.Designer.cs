@@ -4,6 +4,7 @@ using ClinicManager.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClinicManager.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260611214716_AddMedicalFiles")]
+    partial class AddMedicalFiles
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -221,7 +224,7 @@ namespace ClinicManager.Migrations
                     b.Property<int>("MedicationId")
                         .HasColumnType("int");
 
-                    b.Property<int>("PerscriptionId")
+                    b.Property<int?>("PerscriptionId")
                         .HasColumnType("int");
 
                     b.Property<double>("Price")
@@ -472,9 +475,7 @@ namespace ClinicManager.Migrations
 
                     b.HasOne("ClinicManager.Models.Perscription", null)
                         .WithMany("PerscriptionItem")
-                        .HasForeignKey("PerscriptionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("PerscriptionId");
 
                     b.Navigation("Medication");
                 });
