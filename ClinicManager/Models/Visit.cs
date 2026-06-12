@@ -1,9 +1,13 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace ClinicManager.Models
 {
     public class Visit
     {
         public int Id { get; set; }
         public int PatientId { get; set; }
+
+        [Required(ErrorMessage = "Please select a doctor.")]
         public string DoctorId { get; set; } = "";
 
         public DateTime ScheduledAt { get; set; }
