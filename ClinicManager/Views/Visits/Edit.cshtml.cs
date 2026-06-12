@@ -2,6 +2,7 @@ using System.Text;
 using ClinicManager.Dtos.Visits;
 using ClinicManager.Models;
 using ClinicManager.Services;
+using ClinicManager.Utils.Email;
 using ClinicManager.Utils.PDF;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -17,13 +18,15 @@ namespace ClinicManager.Views.Visits
         private readonly IVisitService _visitService;
         private readonly IMedicationService _medicationService;
         private readonly IProcedureService _procedureService;
+        private readonly IEmailService _emailService;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public EditModel(IVisitService visitService, IMedicationService medicationService, IProcedureService procedureService, UserManager<ApplicationUser> userManager)
+        public EditModel(IVisitService visitService, IMedicationService medicationService, IProcedureService procedureService, IEmailService emailService, UserManager<ApplicationUser> userManager)
         {
             _visitService = visitService;
             _medicationService = medicationService;
             _procedureService = procedureService;
+            _emailService = emailService;
             _userManager = userManager;
         }
 
@@ -81,60 +84,49 @@ namespace ClinicManager.Views.Visits
                 if (visit.DoctorId != userId) return Forbid();
             }
 
-            var patient = visit.Patient;
-            var doctor = visit.Doctor;
+            var data = await BuildReportDataAsync(visit);
+            var bytes = PdfReportWriter.GenerateBytes(data);
+            var filename = $"visit-{visit.Id}-{visit.Patient?.LastName?.ToLower()}.pdf";
+            return File(bytes, "application/pdf", filename);
+        }
 
-            var patientInfo = new StringBuilder();
-            if (patient != null)
+        public async Task<IActionResult> OnPostSendReportAsync(int id)
+        {
+            var visit = await _visitService.GetVisitDetailAsync(id);
+            if (visit == null) return NotFound();
+
+            if (User.IsInRole("Doctor"))
             {
-                patientInfo.AppendLine($"{patient.LastName} {patient.FirstName}");
-                patientInfo.AppendLine($"PESEL: {patient.Pesel}");
-                patientInfo.AppendLine($"DOB: {patient.DateOfBirth:d MMM yyyy}");
-                patientInfo.AppendLine($"Phone: {patient.PhoneNumber}");
-                patientInfo.Append($"Insurance: {patient.InsuranceNumber}");
+                var userId = _userManager.GetUserId(User);
+                if (visit.DoctorId != userId) return Forbid();
             }
 
-            var visitInfo = new StringBuilder();
-            visitInfo.AppendLine($"Date: {visit.ScheduledAt:d MMM yyyy HH:mm}");
-            visitInfo.AppendLine($"Doctor: {doctor?.LastName} {doctor?.FirstName}");
-            var allProcedures = await _procedureService.GetAllProceduresAsync();
-            if (visit.Procedures.Any())
-                foreach (var pr in visit.Procedures)
-                {
-                    var name = allProcedures.FirstOrDefault(p => p.Id == pr.ProcedureId)?.Name ?? "?";
-                    visitInfo.AppendLine($"• {name}: {pr.Cost:C}");
-                }
-            else
-                visitInfo.AppendLine("Procedures: —");
-
-            var prescriptionSections = visit.Prescriptions.Select((rx, i) =>
+            var patientEmail = visit.Patient?.Email;
+            if (string.IsNullOrWhiteSpace(patientEmail))
             {
-                var sb = new StringBuilder();
-                foreach (var item in rx.PerscriptionItem)
-                    sb.AppendLine($"• {item.Medication?.Name}  |  {item.Dosage}  |  {item.Amount}  |  {item.Price:C}");
-                sb.Append($"Total: {rx.PerscriptionItem.Sum(it => it.Price):C}");
-                return new PdfSection($"Prescription #{i + 1}", sb.ToString());
-            }).ToArray();
+                StatusMessage = "Patient has no email address on file.";
+                return RedirectToPage(new { id });
+            }
 
-            var data = new PdfReportData(
-                $"Visit Report — {patient?.LastName} {patient?.FirstName}",
-                $"{visit.ScheduledAt:d MMM yyyy}  ·  Dr. {doctor?.LastName} {doctor?.FirstName}"
-            )
-            {
-                TopLeft = [new("Patient", patientInfo.ToString().TrimEnd())],
-                TopRight = [new("Visit", visitInfo.ToString().TrimEnd())],
-                Middle =
-                [
-                    new("Interview", string.IsNullOrWhiteSpace(visit.Survey) ? "—" : visit.Survey),
-                    new("Diagnosis", string.IsNullOrWhiteSpace(visit.Diagnosis) ? "—" : visit.Diagnosis),
-                    new("Recommendations", string.IsNullOrWhiteSpace(visit.Recommendations) ? "—" : visit.Recommendations),
-                ],
-                BottomLeft = prescriptionSections.Length > 0 ? prescriptionSections : [new("Prescriptions", "None")],
-            };
-
+            var data = await BuildReportDataAsync(visit);
             var bytes = PdfReportWriter.GenerateBytes(data);
-            var filename = $"visit-{visit.Id}-{patient?.LastName?.ToLower()}.pdf";
-            return File(bytes, "application/pdf", filename);
+            var filename = $"visit-{visit.Id}-{visit.Patient?.LastName?.ToLower()}.pdf";
+
+            var body = $"Dear {visit.Patient?.FirstName} {visit.Patient?.LastName},\n\n" +
+                       $"Please find attached your visit report from {visit.ScheduledAt:d MMM yyyy} " +
+                       $"with Dr. {visit.Doctor?.LastName} {visit.Doctor?.FirstName}.\n\n" +
+                       "Clinic Manager";
+
+            await _emailService.SendAsync(
+                patientEmail,
+                $"Visit Report — {visit.ScheduledAt:d MMM yyyy}",
+                body,
+                false,
+                new EmailAttachment(bytes, filename, "application/pdf")
+            );
+
+            StatusMessage = $"Report sent to {patientEmail}.";
+            return RedirectToPage(new { id });
         }
 
         public async Task<IActionResult> OnGetPrescriptionPdfAsync(int? id, int prescriptionId)
@@ -270,6 +262,61 @@ namespace ClinicManager.Views.Visits
 
             StatusMessage = "Prescription deleted.";
             return RedirectToPage(new { id = owner.VisitId });
+        }
+
+        private async Task<PdfReportData> BuildReportDataAsync(VisitDetailDto visit)
+        {
+            var patient = visit.Patient;
+            var doctor = visit.Doctor;
+
+            var patientInfo = new StringBuilder();
+            if (patient != null)
+            {
+                patientInfo.AppendLine($"{patient.LastName} {patient.FirstName}");
+                patientInfo.AppendLine($"PESEL: {patient.Pesel}");
+                patientInfo.AppendLine($"DOB: {patient.DateOfBirth:d MMM yyyy}");
+                patientInfo.AppendLine($"Phone: {patient.PhoneNumber}");
+                patientInfo.Append($"Insurance: {patient.InsuranceNumber}");
+            }
+
+            var visitInfo = new StringBuilder();
+            visitInfo.AppendLine($"Date: {visit.ScheduledAt:d MMM yyyy HH:mm}");
+            visitInfo.AppendLine($"Doctor: {doctor?.LastName} {doctor?.FirstName}");
+
+            var allProcedures = await _procedureService.GetAllProceduresAsync();
+            if (visit.Procedures.Any())
+                foreach (var pr in visit.Procedures)
+                {
+                    var name = allProcedures.FirstOrDefault(p => p.Id == pr.ProcedureId)?.Name ?? "?";
+                    visitInfo.AppendLine($"• {name}: {pr.Cost:C}");
+                }
+            else
+                visitInfo.AppendLine("Procedures: —");
+
+            var prescriptionSections = visit.Prescriptions.Select((rx, i) =>
+            {
+                var sb = new StringBuilder();
+                foreach (var item in rx.PerscriptionItem)
+                    sb.AppendLine($"• {item.Medication?.Name}  |  {item.Dosage}  |  {item.Amount}  |  {item.Price:C}");
+                sb.Append($"Total: {rx.PerscriptionItem.Sum(it => it.Price):C}");
+                return new PdfSection($"Prescription #{i + 1}", sb.ToString());
+            }).ToArray();
+
+            return new PdfReportData(
+                $"Visit Report — {patient?.LastName} {patient?.FirstName}",
+                $"{visit.ScheduledAt:d MMM yyyy}  ·  Dr. {doctor?.LastName} {doctor?.FirstName}"
+            )
+            {
+                TopLeft = [new("Patient", patientInfo.ToString().TrimEnd())],
+                TopRight = [new("Visit", visitInfo.ToString().TrimEnd())],
+                Middle =
+                [
+                    new("Interview", string.IsNullOrWhiteSpace(visit.Survey) ? "—" : visit.Survey),
+                    new("Diagnosis", string.IsNullOrWhiteSpace(visit.Diagnosis) ? "—" : visit.Diagnosis),
+                    new("Recommendations", string.IsNullOrWhiteSpace(visit.Recommendations) ? "—" : visit.Recommendations),
+                ],
+                BottomLeft = prescriptionSections.Length > 0 ? prescriptionSections : [new("Prescriptions", "None")],
+            };
         }
 
         private async Task LoadMedicationsAsync()

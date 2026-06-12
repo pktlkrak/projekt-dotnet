@@ -4,7 +4,6 @@ using ClinicManager.Models;
 using ClinicManager.Services;
 using ClinicManager.Utils.Email;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using NLog;
@@ -128,11 +127,6 @@ app.MapStaticAssets();
 app.MapRazorPages()
    .WithStaticAssets();
 
-app.MapGet("/Debug/test/email", async (IEmailService email, IOptions<SmtpSettings> smtp) =>
-{
-    await email.SendAsync(smtp.Value.FromAddress, "Test email", "This is a test email from ClinicManager.");
-    return Results.Ok($"Test email sent to {smtp.Value.FromAddress}.");
-});
 
 app.Run();
 

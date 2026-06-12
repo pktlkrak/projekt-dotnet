@@ -7,7 +7,16 @@
 <div class="d-flex align-items-center mb-4 gap-3">
     <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">← Back</a>
     <h2 class="mb-0">Edit Appointment</h2>
-    <a asp-page-handler="Pdf" asp-route-id="@Model.Visit.Id" class="btn btn-outline-secondary btn-sm ms-auto">Download PDF</a>
+    <div class="ms-auto d-flex gap-2">
+        @if (Model.Visit.Patient != null)
+        {
+            <a asp-page="/Patients/Details" asp-route-id="@Model.Visit.Patient.Id" class="btn btn-outline-secondary btn-sm">Patient</a>
+        }
+        <a asp-page-handler="Pdf" asp-route-id="@Model.Visit.Id" class="btn btn-outline-secondary btn-sm">Download PDF</a>
+        <form method="post" asp-page-handler="SendReport" asp-route-id="@Model.Visit.Id" class="m-0">
+            <button type="submit" class="btn btn-outline-primary btn-sm">Send Report</button>
+        </form>
+    </div>
 </div>
 
 @if (!string.IsNullOrEmpty(Model.StatusMessage))

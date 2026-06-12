@@ -80,20 +80,26 @@
                 {
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         <a href="~/@file.Path" target="_blank">@System.IO.Path.GetFileName(file.Path)</a>
-                        <form asp-page-handler="DeleteFile" asp-route-id="@Model.Patient.Id" asp-route-fileId="@file.Id" method="post" class="d-inline"
-                              onsubmit="return confirm('Are you sure you want to delete this document?');">
-                            <input type="hidden" asp-for="ReturnUrl" />
-                            <button type="submit" class="btn btn-link p-0 align-baseline text-danger">Delete</button>
-                        </form>
+                        @if (!User.IsInRole("Doctor"))
+                        {
+                            <form asp-page-handler="DeleteFile" asp-route-id="@Model.Patient.Id" asp-route-fileId="@file.Id" method="post" class="d-inline"
+                                  onsubmit="return confirm('Are you sure you want to delete this document?');">
+                                <input type="hidden" asp-for="ReturnUrl" />
+                                <button type="submit" class="btn btn-link p-0 align-baseline text-danger">Delete</button>
+                            </form>
+                        }
                     </li>
                 }
             </ul>
         }
-        <form asp-page-handler="Upload" asp-route-id="@Model.Patient.Id" method="post" enctype="multipart/form-data" class="d-flex gap-2">
-            <input type="hidden" asp-for="ReturnUrl" />
-            <input type="file" name="file" accept="image/*" class="form-control" required />
-            <button type="submit" class="btn btn-outline-primary text-nowrap">Upload</button>
-        </form>
+        @if (!User.IsInRole("Doctor"))
+        {
+            <form asp-page-handler="Upload" asp-route-id="@Model.Patient.Id" method="post" enctype="multipart/form-data" class="d-flex gap-2">
+                <input type="hidden" asp-for="ReturnUrl" />
+                <input type="file" name="file" accept="image/*" class="form-control" required />
+                <button type="submit" class="btn btn-outline-primary text-nowrap">Upload</button>
+            </form>
+        }
     </div>
 </div>
 
@@ -135,9 +141,13 @@
 </div>
 
 <div>
-    <a asp-page="./Edit" asp-route-id="@Model.Patient.Id" asp-route-returnUrl="@Url.Page("./Details", new { id = Model.Patient.Id, returnUrl = Model.ReturnUrl })">Edit</a> |
+    @if (!User.IsInRole("Doctor"))
+    {
+        <a asp-page="./Edit" asp-route-id="@Model.Patient.Id" asp-route-returnUrl="@Url.Page("./Details", new { id = Model.Patient.Id, returnUrl = Model.ReturnUrl })">Edit</a>
+        <text> | </text>
+    }
     <a href="@Model.ReturnUrl">Back to List</a>
-    @if (!Model.Patient.IsDeleted)
+    @if (!User.IsInRole("Doctor") && !Model.Patient.IsDeleted)
     {
         <text> | </text>
         <form asp-page-handler="Delete" asp-route-id="@Model.Patient.Id" method="post" class="d-inline"

@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace ClinicManager.Views.Patients
 {
-    [Authorize(Roles = "Admin,RegistrationWorker")]
+    [Authorize(Roles = "Admin,RegistrationWorker,Doctor")]
     public class DetailsModel : PageModel
     {
         private readonly IPatientService _patientService;
