@@ -1,0 +1,48 @@
+@page "{id:int}"
+@model ClinicManager.Views.Procedures.EditModel
+@{
+    ViewData["Title"] = "Edit Procedure";
+}
+
+<div class="d-flex align-items-center mb-4 gap-3">
+    <a asp-page="Index" class="btn btn-outline-secondary btn-sm">← Back</a>
+    <h2 class="mb-0">Edit Procedure</h2>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <form method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                    <input type="hidden" asp-for="Procedure.Id" />
+
+                    <div class="mb-3">
+                        <label asp-for="Procedure.Name" class="form-label">Name</label>
+                        <input asp-for="Procedure.Name" class="form-control" />
+                        <span asp-validation-for="Procedure.Name" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Procedure.Description" class="form-label">Description</label>
+                        <input asp-for="Procedure.Description" class="form-control" />
+                        <span asp-validation-for="Procedure.Description" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-4">
+                        <label asp-for="Procedure.Cost" class="form-label">Cost</label>
+                        <input asp-for="Procedure.Cost" type="number" step="0.01" min="0" class="form-control" />
+                        <span asp-validation-for="Procedure.Cost" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <a asp-page="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

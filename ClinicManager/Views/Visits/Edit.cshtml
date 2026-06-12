@@ -171,13 +171,13 @@
 
                 <!-- Existing prescriptions -->
                 <div class="card-body p-0">
-                    @if (!Model.Visit.Reciepts.Any())
+                    @if (!Model.Visit.Prescriptions.Any())
                     {
                         <p class="text-muted p-3 mb-0">No prescriptions for this visit.</p>
                     }
                     else
                     {
-                        @foreach (var (rx, i) in Model.Visit.Reciepts.Select((r, idx) => (r, idx)))
+                        @foreach (var (rx, i) in Model.Visit.Prescriptions.Select((r, idx) => (r, idx)))
                         {
                             <div class="px-3 pt-3 @(i > 0 ? "border-top" : "")">
                                 <div class="d-flex justify-content-between align-items-center mb-2">

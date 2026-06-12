@@ -93,7 +93,7 @@ namespace ClinicManager.Views.Visits
             visitInfo.AppendLine($"Date: {visit.ScheduledAt:d MMM yyyy HH:mm}");
             visitInfo.Append($"Doctor: {doctor?.LastName} {doctor?.FirstName}");
 
-            var prescriptionSections = visit.Reciepts.Select((rx, i) =>
+            var prescriptionSections = visit.Prescriptions.Select((rx, i) =>
             {
                 var sb = new StringBuilder();
                 foreach (var item in rx.PerscriptionItem)
@@ -136,7 +136,7 @@ namespace ClinicManager.Views.Visits
                 if (visit.DoctorId != userId) return Forbid();
             }
 
-            var rx = visit.Reciepts
+            var rx = visit.Prescriptions
                 .Select((r, i) => (r, i))
                 .FirstOrDefault(t => t.r.Id == prescriptionId);
 
@@ -294,7 +294,7 @@ namespace ClinicManager.Views.Visits
             _context.Visits
                 .Include(v => v.Patient)
                 .Include(v => v.Doctor)
-                .Include(v => v.Reciepts)
+                .Include(v => v.Prescriptions)
                     .ThenInclude(p => p.PerscriptionItem)
                         .ThenInclude(i => i.Medication)
                 .FirstOrDefaultAsync(v => v.Id == id);
