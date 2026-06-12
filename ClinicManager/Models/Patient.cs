@@ -25,7 +25,7 @@ namespace ClinicManager.Models
         public string Email { get; set; }
 
         [Required]
-        public DateTime DateOfBirth { get; set; }
+        public DateOnly DateOfBirth { get; set; }
 
         public bool IsDeleted { get; set; } = false; // soft delete (RODO)
 

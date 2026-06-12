@@ -10,6 +10,7 @@ namespace ClinicManager.Mapping
         public partial VisitDto ToDto(Visit visit);
         public partial List<VisitDto> ToDtoList(List<Visit> visits);
 
+        [MapperIgnoreTarget(nameof(VisitDetailDto.ProcedureId))]
         public partial VisitDetailDto ToDetailDto(Visit visit);
 
         [MapperIgnoreTarget(nameof(Visit.Id))]

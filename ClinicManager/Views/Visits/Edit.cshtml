@@ -36,6 +36,10 @@
                     <dd class="col-7">
                         <span class="badge @StatusBadge(Model.Visit.Status)">@Model.Visit.Status</span>
                     </dd>
+                    <dt class="col-5 text-muted">Procedure</dt>
+                    <dd class="col-7">@(Model.ProcedureItems.FirstOrDefault(p => p.Value == Model.Visit.ProcedureId?.ToString())?.Text ?? "—")</dd>
+                    <dt class="col-5 text-muted">Cost</dt>
+                    <dd class="col-7">@Model.Visit.Cost.ToString("C")</dd>
                 </dl>
             </div>
         </div>
@@ -82,6 +86,18 @@
 
                     @if (User.IsInRole("Doctor"))
                     {
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-8">
+                                <label asp-for="Visit.ProcedureId" class="form-label">Procedure</label>
+                                <select asp-for="Visit.ProcedureId" asp-items="Model.ProcedureItems" class="form-select" id="edit-procedure-select">
+                                    <option value="">— select procedure —</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="Visit.Cost" class="form-label">Cost (PLN)</label>
+                                <input asp-for="Visit.Cost" type="number" step="0.01" min="0" class="form-control" id="edit-procedure-cost" />
+                            </div>
+                        </div>
                         <div class="mb-3">
                             <label asp-for="Visit.Survey" class="form-label">Interview / Wywiad</label>
                             <textarea asp-for="Visit.Survey" class="form-control" rows="3"></textarea>
@@ -296,4 +312,15 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @if (User.IsInRole("Doctor"))
+    {
+        <script>
+            const editProcCosts = @Html.Raw(JsonSerializer.Serialize(Model.ProcedureCosts));
+            document.getElementById('edit-procedure-select')?.addEventListener('change', function () {
+                const id = parseInt(this.value);
+                const costInput = document.getElementById('edit-procedure-cost');
+                if (editProcCosts[id] !== undefined) costInput.value = editProcCosts[id].toFixed(2);
+            });
+        </script>
+    }
 }

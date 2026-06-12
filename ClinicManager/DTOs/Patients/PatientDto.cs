@@ -8,7 +8,7 @@ namespace ClinicManager.Dtos.Patients
         public string Pesel { get; set; } = "";
         public string PhoneNumber { get; set; } = "";
         public string Email { get; set; } = "";
-        public DateTime DateOfBirth { get; set; }
+        public DateOnly DateOfBirth { get; set; }
         public bool IsDeleted { get; set; }
         public string InsuranceNumber { get; set; } = "";
     }

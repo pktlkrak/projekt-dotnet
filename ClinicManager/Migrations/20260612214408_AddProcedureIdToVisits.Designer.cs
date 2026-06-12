@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClinicManager.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260612173522_PatientsCleanup")]
-    partial class PatientsCleanup
+    [Migration("20260612214408_AddProcedureIdToVisits")]
+    partial class AddProcedureIdToVisits
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -271,6 +271,9 @@ namespace ClinicManager.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<double>("Cost")
+                        .HasColumnType("float");
+
                     b.Property<string>("Diagnosis")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -491,7 +494,7 @@ namespace ClinicManager.Migrations
                         .IsRequired();
 
                     b.HasOne("ClinicManager.Models.Patient", "Patient")
-                        .WithMany()
+                        .WithMany("Visits")
                         .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -557,6 +560,11 @@ namespace ClinicManager.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("ClinicManager.Models.Patient", b =>
+                {
+                    b.Navigation("Visits");
                 });
 
             modelBuilder.Entity("ClinicManager.Models.Perscription", b =>

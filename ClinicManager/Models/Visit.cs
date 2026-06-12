@@ -13,6 +13,8 @@ namespace ClinicManager.Models
         public DateTime ScheduledAt { get; set; }
         public VisitStatus Status { get; set; }
 
+        public double Cost { get; set; }
+
         public Patient? Patient { get; set; }
         public ApplicationUser? Doctor { get; set; }
 

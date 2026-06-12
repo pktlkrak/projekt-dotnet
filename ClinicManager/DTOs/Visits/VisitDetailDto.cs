@@ -11,6 +11,9 @@ namespace ClinicManager.Dtos.Visits
         public DateTime ScheduledAt { get; set; }
         public VisitStatus Status { get; set; }
 
+        public int? ProcedureId { get; set; }
+        public double Cost { get; set; }
+
         public string Survey { get; set; } = "";
         public string Diagnosis { get; set; } = "";
         public string Recommendations { get; set; } = "";

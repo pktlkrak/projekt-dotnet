@@ -46,6 +46,7 @@ namespace ClinicManager.Services
         public async Task CreateVisitAsync(VisitCreateDto dto)
         {
             var visit = _mapper.ToEntity(dto);
+            visit.Procedure = dto.ProcedureId > 0 ? await _context.Procedures.FindAsync(dto.ProcedureId) : null;
             _context.Visits.Add(visit);
             await _context.SaveChangesAsync();
         }
@@ -53,7 +54,7 @@ namespace ClinicManager.Services
         public async Task<VisitDetailDto?> GetVisitDetailAsync(int id)
         {
             var visit = await LoadVisitAsync(id);
-            return visit == null ? null : _mapper.ToDetailDto(visit);
+            return visit == null ? null : MapDetail(visit);
         }
 
         public async Task<VisitDetailDto?> UpdateVisitAsync(int id, VisitDetailDto dto, bool isDoctor)
@@ -65,6 +66,8 @@ namespace ClinicManager.Services
 
             if (isDoctor)
             {
+                existing.Procedure = dto.ProcedureId.HasValue ? await _context.Procedures.FindAsync(dto.ProcedureId.Value) : null;
+                existing.Cost = dto.Cost;
                 existing.Survey = dto.Survey;
                 existing.Diagnosis = dto.Diagnosis;
                 existing.Recommendations = dto.Recommendations;
@@ -75,7 +78,8 @@ namespace ClinicManager.Services
             }
 
             await _context.SaveChangesAsync();
-            return _mapper.ToDetailDto(existing);
+            await _context.Entry(existing).Reference(v => v.Procedure).LoadAsync();
+            return MapDetail(existing);
         }
 
         public async Task<VisitDetailDto?> FinishVisitAsync(int id, VisitDetailDto dto)
@@ -84,12 +88,14 @@ namespace ClinicManager.Services
             if (existing == null) return null;
 
             existing.Status = VisitStatus.Finished;
+            existing.Procedure = dto.ProcedureId.HasValue ? await _context.Procedures.FindAsync(dto.ProcedureId.Value) : null;
+            existing.Cost = dto.Cost;
             existing.Survey = dto.Survey;
             existing.Diagnosis = dto.Diagnosis;
             existing.Recommendations = dto.Recommendations;
 
             await _context.SaveChangesAsync();
-            return _mapper.ToDetailDto(existing);
+            return MapDetail(existing);
         }
 
         public async Task AddPrescriptionAsync(PrescriptionFormDto dto)
@@ -137,10 +143,18 @@ namespace ClinicManager.Services
             return true;
         }
 
+        private VisitDetailDto MapDetail(Visit visit)
+        {
+            var dto = _mapper.ToDetailDto(visit);
+            dto.ProcedureId = visit.Procedure?.Id;
+            return dto;
+        }
+
         private Task<Visit?> LoadVisitAsync(int id) =>
             _context.Visits
                 .Include(v => v.Patient)
                 .Include(v => v.Doctor)
+                .Include(v => v.Procedure)
                 .Include(v => v.Prescriptions)
                     .ThenInclude(p => p.PerscriptionItem)
                         .ThenInclude(i => i.Medication)
