@@ -11,6 +11,7 @@ namespace ClinicManager.Mapping
         public partial List<ProcedureDto> ToDtoList(List<Procedure> procedures);
         public partial ProcedureFormDto ToFormDto(Procedure procedure);
 
+        [MapperIgnoreTarget(nameof(Procedure.Id))]
         public partial Procedure ToEntity(ProcedureFormDto dto);
 
         [MapperIgnoreTarget(nameof(Procedure.Id))]

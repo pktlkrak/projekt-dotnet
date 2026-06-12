@@ -28,11 +28,12 @@ namespace ClinicManager.Services
             return medication == null ? null : _mapper.ToFormDto(medication);
         }
 
-        public async Task CreateMedicationAsync(MedicationFormDto dto)
+        public async Task<MedicationDto> CreateMedicationAsync(MedicationFormDto dto)
         {
             var medication = _mapper.ToEntity(dto);
             _context.Medications.Add(medication);
             await _context.SaveChangesAsync();
+            return _mapper.ToDto(medication);
         }
 
         public async Task<bool> UpdateMedicationAsync(int id, MedicationFormDto dto)

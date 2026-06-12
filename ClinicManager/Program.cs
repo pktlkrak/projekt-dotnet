@@ -1,4 +1,5 @@
 using ClinicManager.Data;
+using ClinicManager.Dtos.Medications;
 using ClinicManager.Mapping;
 using ClinicManager.Models;
 using ClinicManager.Services;
@@ -7,8 +8,10 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
 using NLog;
 using NLog.Web;
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 
 var logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
@@ -44,10 +47,34 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Cookie.HttpOnly = true;
     options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
     options.LoginPath = "/Identity/Account/Login";
-    // ReturnUrlParameter requires 
+    // ReturnUrlParameter requires
     //using Microsoft.AspNetCore.Authentication.Cookies;
     options.ReturnUrlParameter = CookieAuthenticationDefaults.ReturnUrlParameter;
     options.SlidingExpiration = true;
+
+    options.Events.OnRedirectToLogin = context =>
+    {
+        if (context.Request.Path.StartsWithSegments("/api"))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return Task.CompletedTask;
+        }
+
+        context.Response.Redirect(context.RedirectUri);
+        return Task.CompletedTask;
+    };
+
+    options.Events.OnRedirectToAccessDenied = context =>
+    {
+        if (context.Request.Path.StartsWithSegments("/api"))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return Task.CompletedTask;
+        }
+
+        context.Response.Redirect(context.RedirectUri);
+        return Task.CompletedTask;
+    };
 });
 
 
@@ -70,6 +97,18 @@ builder.Services.AddScoped<IVisitService, VisitService>();
 
 builder.Services.AddScoped<MedicalFileMapper>();
 builder.Services.AddScoped<IMedicalFileService, MedicalFileService>();
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "ClinicManager API",
+        Version = "v1"
+    });
+
+    options.DocInclusionPredicate((_, apiDesc) => apiDesc.RelativePath?.StartsWith("api/") == true);
+});
 
 builder.Services.AddRazorPages().WithRazorPagesRoot("/Views");
 builder.Services.AddSession();
@@ -124,6 +163,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseSession();
 
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "ClinicManager API v1");
+});
+
 app.MapStaticAssets();
 app.MapRazorPages()
    .WithStaticAssets();
@@ -133,6 +178,75 @@ app.MapGet("/Debug/test/email", async (IEmailService email, IOptions<SmtpSetting
     await email.SendAsync(smtp.Value.FromAddress, "Test email", "This is a test email from ClinicManager.");
     return Results.Ok($"Test email sent to {smtp.Value.FromAddress}.");
 });
+
+var medicationsApi = app.MapGroup("/api/medications")
+    .WithTags("Medications")
+    .AllowAnonymous();
+
+medicationsApi.MapGet("/", async (IMedicationService medicationService) =>
+{
+    var medications = await medicationService.GetAllMedicationsAsync();
+    return Results.Ok(medications);
+})
+.WithName("GetMedications")
+.Produces<List<MedicationDto>>(StatusCodes.Status200OK);
+
+medicationsApi.MapGet("/{id:int}", async (int id, IMedicationService medicationService) =>
+{
+    var medication = await medicationService.GetMedicationForEditAsync(id);
+    return medication is null ? Results.NotFound() : Results.Ok(medication);
+})
+.WithName("GetMedicationById")
+.Produces<MedicationFormDto>(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status404NotFound);
+
+medicationsApi.MapPost("/", async (MedicationFormDto dto, IMedicationService medicationService) =>
+{
+    var validation = ValidateMedication(dto);
+    if (validation is not null) return validation;
+
+    var created = await medicationService.CreateMedicationAsync(dto);
+    return Results.Created($"/api/medications/{created.Id}", created);
+})
+.WithName("CreateMedication")
+.Produces<MedicationDto>(StatusCodes.Status201Created)
+.ProducesValidationProblem();
+
+medicationsApi.MapPut("/{id:int}", async (int id, MedicationFormDto dto, IMedicationService medicationService) =>
+{
+    var validation = ValidateMedication(dto);
+    if (validation is not null) return validation;
+
+    var updated = await medicationService.UpdateMedicationAsync(id, dto);
+    return updated ? Results.NoContent() : Results.NotFound();
+})
+.WithName("UpdateMedication")
+.Produces(StatusCodes.Status204NoContent)
+.Produces(StatusCodes.Status404NotFound)
+.ProducesValidationProblem();
+
+medicationsApi.MapDelete("/{id:int}", async (int id, IMedicationService medicationService) =>
+{
+    var deleted = await medicationService.DeleteMedicationAsync(id);
+    return deleted is null ? Results.NotFound() : Results.Ok(deleted);
+})
+.WithName("DeleteMedication")
+.Produces<MedicationDto>(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status404NotFound);
+
+static IResult? ValidateMedication(MedicationFormDto dto)
+{
+    var results = new List<ValidationResult>();
+    if (Validator.TryValidateObject(dto, new ValidationContext(dto), results, validateAllProperties: true))
+        return null;
+
+    var errors = results
+        .SelectMany(r => r.MemberNames.DefaultIfEmpty(""), (r, member) => (member, r.ErrorMessage ?? "Invalid value"))
+        .GroupBy(x => x.member)
+        .ToDictionary(g => g.Key, g => g.Select(x => x.Item2).ToArray());
+
+    return Results.ValidationProblem(errors);
+}
 
 app.Run();
 
