@@ -32,6 +32,6 @@ namespace ClinicManager.Models
         [Required]
         public string InsuranceNumber { get; set; }
 
-        ICollection<Visit> Visits { get; set; } = new List<Visit>();
+        public ICollection<Visit> Visits { get; set; } = new List<Visit>();
     }
 }

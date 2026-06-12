@@ -1,5 +1,5 @@
-using ClinicManager.Data;
-using ClinicManager.Models;
+using ClinicManager.Dtos.Medications;
+using ClinicManager.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -9,24 +9,25 @@ namespace ClinicManager.Views.Medications
     [Authorize(Roles = "Admin,RegistrationWorker")]
     public class EditMedicationModel : PageModel
     {
-        private readonly AppDbContext _context;
+        private readonly IMedicationService _medicationService;
 
-        public EditMedicationModel(AppDbContext context)
+        public EditMedicationModel(IMedicationService medicationService)
         {
-            _context = context;
+            _medicationService = medicationService;
         }
 
         [BindProperty]
-        public Medication Medication { get; set; } = new();
+        public MedicationFormDto Medication { get; set; } = new();
 
         [BindProperty(SupportsGet = true)]
         public string ReturnUrl { get; set; } = "/Admin/Index";
 
         public async Task<IActionResult> OnGetAsync(int id)
         {
-            var med = await _context.Medications.FindAsync(id);
-            if (med == null) return NotFound();
-            Medication = med;
+            var dto = await _medicationService.GetMedicationForEditAsync(id);
+            if (dto == null) return NotFound();
+
+            Medication = dto;
             return Page();
         }
 
@@ -34,12 +35,8 @@ namespace ClinicManager.Views.Medications
         {
             if (!ModelState.IsValid) return Page();
 
-            var existing = await _context.Medications.FindAsync(Medication.Id);
-            if (existing == null) return NotFound();
-
-            existing.Name = Medication.Name;
-            existing.Cost = Medication.Cost;
-            await _context.SaveChangesAsync();
+            var success = await _medicationService.UpdateMedicationAsync(Medication.Id, Medication);
+            if (!success) return NotFound();
 
             return LocalRedirect(ReturnUrl);
         }

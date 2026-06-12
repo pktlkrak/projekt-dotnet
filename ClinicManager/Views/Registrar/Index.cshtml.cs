@@ -1,28 +1,26 @@
-using ClinicManager.Data;
+using ClinicManager.Dtos.Medications;
 using ClinicManager.Dtos.Patients;
-using ClinicManager.Models;
 using ClinicManager.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManager.Views.Registrar
 {
     [Authorize(Roles = "Admin,RegistrationWorker")]
     public class RegistrarIndexModel : PageModel
     {
-        private readonly AppDbContext _context;
         private readonly IPatientService _patientService;
+        private readonly IMedicationService _medicationService;
 
-        public RegistrarIndexModel(AppDbContext context, IPatientService patientService)
+        public RegistrarIndexModel(IPatientService patientService, IMedicationService medicationService)
         {
-            _context = context;
             _patientService = patientService;
+            _medicationService = medicationService;
         }
 
         public IList<PatientDto> Patients { get; set; } = new List<PatientDto>();
-        public List<Medication> Medications { get; set; } = new();
+        public List<MedicationDto> Medications { get; set; } = new();
 
         public string? Search { get; set; }
 
@@ -31,17 +29,12 @@ namespace ClinicManager.Views.Registrar
             Search = search;
 
             Patients = await _patientService.GetActivePatientsAsync(search);
-            Medications = await _context.Medications.OrderBy(m => m.Name).ToListAsync();
+            Medications = await _medicationService.GetAllMedicationsAsync();
         }
 
         public async Task<IActionResult> OnPostDeleteMedicationAsync(int medicationId)
         {
-            var med = await _context.Medications.FindAsync(medicationId);
-            if (med != null)
-            {
-                _context.Medications.Remove(med);
-                await _context.SaveChangesAsync();
-            }
+            await _medicationService.DeleteMedicationAsync(medicationId);
             return RedirectToPage();
         }
     }

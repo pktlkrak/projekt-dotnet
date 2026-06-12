@@ -1,5 +1,5 @@
-using ClinicManager.Data;
-using ClinicManager.Models;
+using ClinicManager.Dtos.Procedures;
+using ClinicManager.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -9,24 +9,24 @@ namespace ClinicManager.Views.Procedures
     [Authorize(Roles = "Admin")]
     public class EditModel : PageModel
     {
-        private readonly AppDbContext _context;
+        private readonly IProcedureService _procedureService;
 
-        public EditModel(AppDbContext context)
+        public EditModel(IProcedureService procedureService)
         {
-            _context = context;
+            _procedureService = procedureService;
         }
 
         [BindProperty]
-        public Procedure Procedure { get; set; } = default!;
+        public ProcedureFormDto Procedure { get; set; } = new();
 
         public async Task<IActionResult> OnGetAsync(int? id)
         {
             if (id == null) return NotFound();
 
-            var procedure = await _context.Procedures.FindAsync(id);
-            if (procedure == null) return NotFound();
+            var dto = await _procedureService.GetProcedureForEditAsync(id.Value);
+            if (dto == null) return NotFound();
 
-            Procedure = procedure;
+            Procedure = dto;
             return Page();
         }
 
@@ -34,14 +34,8 @@ namespace ClinicManager.Views.Procedures
         {
             if (!ModelState.IsValid) return Page();
 
-            var existing = await _context.Procedures.FindAsync(Procedure.Id);
-            if (existing == null) return NotFound();
-
-            existing.Name = Procedure.Name;
-            existing.Description = Procedure.Description;
-            existing.Cost = Procedure.Cost;
-
-            await _context.SaveChangesAsync();
+            var success = await _procedureService.UpdateProcedureAsync(Procedure.Id, Procedure);
+            if (!success) return NotFound();
 
             return RedirectToPage("Index");
         }

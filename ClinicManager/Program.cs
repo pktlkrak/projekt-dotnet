@@ -59,6 +59,12 @@ builder.Services.AddScoped<PatientService>();
 builder.Services.AddScoped<IPatientAdminService>(sp => sp.GetRequiredService<PatientService>());
 builder.Services.AddScoped<IPatientService>(sp => sp.GetRequiredService<IPatientAdminService>());
 
+builder.Services.AddScoped<MedicationMapper>();
+builder.Services.AddScoped<IMedicationService, MedicationService>();
+
+builder.Services.AddScoped<ProcedureMapper>();
+builder.Services.AddScoped<IProcedureService, ProcedureService>();
+
 builder.Services.AddRazorPages().WithRazorPagesRoot("/Views");
 builder.Services.AddSession();
 

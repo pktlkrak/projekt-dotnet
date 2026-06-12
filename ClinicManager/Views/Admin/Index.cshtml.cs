@@ -1,10 +1,10 @@
-using ClinicManager.Data;
+using ClinicManager.Dtos.Medications;
 using ClinicManager.Models;
+using ClinicManager.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManager.Views.Admin
 {
@@ -12,17 +12,17 @@ namespace ClinicManager.Views.Admin
     public class AdminIndexModel : PageModel
     {
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly AppDbContext _context;
+        private readonly IMedicationService _medicationService;
 
-        public AdminIndexModel(UserManager<ApplicationUser> userManager, AppDbContext context)
+        public AdminIndexModel(UserManager<ApplicationUser> userManager, IMedicationService medicationService)
         {
             _userManager = userManager;
-            _context = context;
+            _medicationService = medicationService;
         }
 
         public List<UserWithRoles> PendingUsers { get; set; } = new();
         public List<UserWithRoles> Users { get; set; } = new();
-        public List<Medication> Medications { get; set; } = new();
+        public List<MedicationDto> Medications { get; set; } = new();
 
         [TempData]
         public string? StatusMessage { get; set; }
@@ -41,7 +41,7 @@ namespace ClinicManager.Views.Admin
                     Users.Add(entry);
             }
 
-            Medications = await _context.Medications.OrderBy(m => m.Name).ToListAsync();
+            Medications = await _medicationService.GetAllMedicationsAsync();
         }
 
         public async Task<IActionResult> OnPostApproveAsync(string userId)
@@ -69,12 +69,10 @@ namespace ClinicManager.Views.Admin
 
         public async Task<IActionResult> OnPostDeleteMedicationAsync(int medicationId)
         {
-            var med = await _context.Medications.FindAsync(medicationId);
-            if (med != null)
+            var deleted = await _medicationService.DeleteMedicationAsync(medicationId);
+            if (deleted != null)
             {
-                _context.Medications.Remove(med);
-                await _context.SaveChangesAsync();
-                StatusMessage = $"Medication \"{med.Name}\" deleted.";
+                StatusMessage = $"Medication \"{deleted.Name}\" deleted.";
             }
             return RedirectToPage();
         }

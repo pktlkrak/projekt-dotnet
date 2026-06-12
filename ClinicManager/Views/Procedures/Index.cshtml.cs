@@ -1,45 +1,43 @@
-using ClinicManager.Data;
-using ClinicManager.Models;
+using ClinicManager.Dtos.Procedures;
+using ClinicManager.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManager.Views.Procedures
 {
     [Authorize(Roles = "Admin")]
     public class IndexModel : PageModel
     {
-        private readonly AppDbContext _context;
+        private readonly IProcedureService _procedureService;
 
-        public IndexModel(AppDbContext context)
+        public IndexModel(IProcedureService procedureService)
         {
-            _context = context;
+            _procedureService = procedureService;
         }
 
-        public IList<Procedure> Procedures { get; set; } = [];
+        public IList<ProcedureDto> Procedures { get; set; } = [];
 
         [BindProperty]
-        public Procedure NewProcedure { get; set; } = new();
+        public ProcedureFormDto NewProcedure { get; set; } = new();
 
         [TempData]
         public string? StatusMessage { get; set; }
 
         public async Task OnGetAsync()
         {
-            Procedures = await _context.Procedures.OrderBy(p => p.Name).ToListAsync();
+            Procedures = await _procedureService.GetAllProceduresAsync();
         }
 
         public async Task<IActionResult> OnPostCreateAsync()
         {
             if (!ModelState.IsValid)
             {
-                Procedures = await _context.Procedures.OrderBy(p => p.Name).ToListAsync();
+                Procedures = await _procedureService.GetAllProceduresAsync();
                 return Page();
             }
 
-            _context.Procedures.Add(NewProcedure);
-            await _context.SaveChangesAsync();
+            await _procedureService.CreateProcedureAsync(NewProcedure);
 
             StatusMessage = $"Procedure \"{NewProcedure.Name}\" created.";
             return RedirectToPage();
@@ -47,12 +45,10 @@ namespace ClinicManager.Views.Procedures
 
         public async Task<IActionResult> OnPostDeleteAsync(int id)
         {
-            var procedure = await _context.Procedures.FindAsync(id);
-            if (procedure != null)
+            var deleted = await _procedureService.DeleteProcedureAsync(id);
+            if (deleted != null)
             {
-                _context.Procedures.Remove(procedure);
-                await _context.SaveChangesAsync();
-                StatusMessage = $"Procedure \"{procedure.Name}\" deleted.";
+                StatusMessage = $"Procedure \"{deleted.Name}\" deleted.";
             }
 
             return RedirectToPage();

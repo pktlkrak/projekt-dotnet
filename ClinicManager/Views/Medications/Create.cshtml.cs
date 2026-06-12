@@ -1,5 +1,5 @@
-using ClinicManager.Data;
-using ClinicManager.Models;
+using ClinicManager.Dtos.Medications;
+using ClinicManager.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -9,15 +9,15 @@ namespace ClinicManager.Views.Medications
     [Authorize(Roles = "Admin,RegistrationWorker")]
     public class CreateMedicationModel : PageModel
     {
-        private readonly AppDbContext _context;
+        private readonly IMedicationService _medicationService;
 
-        public CreateMedicationModel(AppDbContext context)
+        public CreateMedicationModel(IMedicationService medicationService)
         {
-            _context = context;
+            _medicationService = medicationService;
         }
 
         [BindProperty]
-        public Medication Medication { get; set; } = new();
+        public MedicationFormDto Medication { get; set; } = new();
 
         [BindProperty(SupportsGet = true)]
         public string ReturnUrl { get; set; } = "/Admin/Index";
@@ -28,8 +28,7 @@ namespace ClinicManager.Views.Medications
         {
             if (!ModelState.IsValid) return Page();
 
-            _context.Medications.Add(Medication);
-            await _context.SaveChangesAsync();
+            await _medicationService.CreateMedicationAsync(Medication);
 
             return LocalRedirect(ReturnUrl);
         }
