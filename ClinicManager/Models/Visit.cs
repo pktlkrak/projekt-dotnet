@@ -12,8 +12,9 @@ namespace ClinicManager.Models
         public Patient? Patient { get; set; }
         public ApplicationUser? Doctor { get; set; }
 
-        public ICollection<Procedure> Procedures { get; set; } = new List<Procedure>();
-        public ICollection<Perscription> Reciepts { get; set; } = new List<Perscription>();
+        public Procedure? Procedure { get; set; }
+
+        public ICollection<Perscription> Prescriptions { get; set; } = new List<Perscription>();
 
         public string Survey { get; set; } = "";
         public string Diagnosis { get; set; } = "";

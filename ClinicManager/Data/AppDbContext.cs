@@ -16,4 +16,15 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Perscription> Perscriptions { get; set; }
     public DbSet<PerscriptionItem> PerscriptionItems { get; set; }
     public DbSet<MedicalFile> MedicalFiles { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<Visit>()
+            .HasOne(v => v.Procedure)
+            .WithMany()
+            .HasForeignKey("ProcedureId")
+            .OnDelete(DeleteBehavior.Restrict);
+    }
 }
