@@ -1,5 +1,7 @@
 using ClinicManager.Data;
+using ClinicManager.Dtos.Patients;
 using ClinicManager.Models;
+using ClinicManager.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -11,13 +13,15 @@ namespace ClinicManager.Views.Registrar
     public class RegistrarIndexModel : PageModel
     {
         private readonly AppDbContext _context;
+        private readonly IPatientService _patientService;
 
-        public RegistrarIndexModel(AppDbContext context)
+        public RegistrarIndexModel(AppDbContext context, IPatientService patientService)
         {
             _context = context;
+            _patientService = patientService;
         }
 
-        public IList<Patient> Patients { get; set; } = new List<Patient>();
+        public IList<PatientDto> Patients { get; set; } = new List<PatientDto>();
         public List<Medication> Medications { get; set; } = new();
 
         public string? Search { get; set; }
@@ -25,17 +29,8 @@ namespace ClinicManager.Views.Registrar
         public async Task OnGetAsync(string? search = null)
         {
             Search = search;
-            var query = _context.Patients.Where(p => !p.IsDeleted);
 
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                query = query.Where(p =>
-                    p.LastName.Contains(search) ||
-                    p.FirstName.Contains(search) ||
-                    p.Pesel.Contains(search));
-            }
-
-            Patients = await query.OrderBy(p => p.LastName).ThenBy(p => p.FirstName).ToListAsync();
+            Patients = await _patientService.GetActivePatientsAsync(search);
             Medications = await _context.Medications.OrderBy(m => m.Name).ToListAsync();
         }
 

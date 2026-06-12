@@ -1,13 +1,8 @@
-using ClinicManager.Data;
-using ClinicManager.Models;
+using ClinicManager.Dtos.Patients;
+using ClinicManager.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace ClinicManager.Views.Patients
 {
@@ -15,17 +10,17 @@ namespace ClinicManager.Views.Patients
 
     public class DeleteModel : PageModel
     {
-        private readonly ClinicManager.Data.AppDbContext _context;
+        private readonly IPatientService _patientService;
         private readonly ILogger<DeleteModel> _logger;
 
-        public DeleteModel(ClinicManager.Data.AppDbContext context, ILogger<DeleteModel> logger)
+        public DeleteModel(IPatientService patientService, ILogger<DeleteModel> logger)
         {
-            _context = context;
+            _patientService = patientService;
             _logger = logger;
         }
 
         [BindProperty]
-        public Patient Patient { get; set; } = default!;
+        public PatientDto Patient { get; set; } = default!;
 
         public async Task<IActionResult> OnGetAsync(int? id)
         {
@@ -34,7 +29,7 @@ namespace ClinicManager.Views.Patients
                 return NotFound();
             }
 
-            var patient = await _context.Patients.FirstOrDefaultAsync(m => m.Id == id);
+            var patient = await _patientService.GetPatientAsync(id.Value);
 
             if (patient is not null)
             {
@@ -54,15 +49,7 @@ namespace ClinicManager.Views.Patients
                 return NotFound();
             }
 
-            var patient = await _context.Patients.FindAsync(id);
-            if (patient != null)
-            {
-                // Soft delete - set IsDeleted to true instead of removing
-                patient.IsDeleted = true;
-                _context.Patients.Update(patient);
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("Patient {PatientId} ({LastName}) soft-deleted", patient.Id, patient.LastName);
-            }
+            await _patientService.SoftDeletePatientAsync(id.Value);
 
             return RedirectToPage("./Index");
         }

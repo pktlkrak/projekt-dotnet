@@ -1,5 +1,7 @@
 using ClinicManager.Data;
+using ClinicManager.Mapping;
 using ClinicManager.Models;
+using ClinicManager.Services;
 using ClinicManager.Utils.Email;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.Options;
@@ -51,6 +53,11 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
 builder.Services.AddScoped<IEmailService, EmailService>();
+
+builder.Services.AddScoped<PatientMapper>();
+builder.Services.AddScoped<PatientService>();
+builder.Services.AddScoped<IPatientAdminService>(sp => sp.GetRequiredService<PatientService>());
+builder.Services.AddScoped<IPatientService>(sp => sp.GetRequiredService<IPatientAdminService>());
 
 builder.Services.AddRazorPages().WithRazorPagesRoot("/Views");
 builder.Services.AddSession();

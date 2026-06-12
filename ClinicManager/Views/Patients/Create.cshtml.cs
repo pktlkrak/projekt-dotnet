@@ -1,26 +1,19 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using ClinicManager.Dtos.Patients;
+using ClinicManager.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using ClinicManager.Data;
-using ClinicManager.Models;
 
 namespace ClinicManager.Views.Patients
 {
     [Authorize(Roles = "Admin,RegistrationWorker")]
     public class CreateModel : PageModel
     {
-        private readonly ClinicManager.Data.AppDbContext _context;
-        private readonly ILogger<CreateModel> _logger;
+        private readonly IPatientService _patientService;
 
-        public CreateModel(ClinicManager.Data.AppDbContext context, ILogger<CreateModel> logger)
+        public CreateModel(IPatientService patientService)
         {
-            _context = context;
-            _logger = logger;
+            _patientService = patientService;
         }
 
         public IActionResult OnGet()
@@ -29,7 +22,7 @@ namespace ClinicManager.Views.Patients
         }
 
         [BindProperty]
-        public Patient Patient { get; set; } = default!;
+        public PatientFormDto Patient { get; set; } = new();
 
         [BindProperty(SupportsGet = true)]
         public string ReturnUrl { get; set; } = "/Patients/Index";
@@ -42,13 +35,7 @@ namespace ClinicManager.Views.Patients
                 return Page();
             }
 
-            // Always create non-deleted users
-            Patient.IsDeleted = false;
-
-            _context.Patients.Add(Patient);
-            await _context.SaveChangesAsync();
-
-            _logger.LogInformation("Patient {PatientId} ({LastName}) created", Patient.Id, Patient.LastName);
+            await _patientService.CreatePatientAsync(Patient);
 
             return LocalRedirect(ReturnUrl);
         }

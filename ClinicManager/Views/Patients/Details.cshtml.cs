@@ -1,13 +1,11 @@
 using ClinicManager.Data;
+using ClinicManager.Dtos.Patients;
 using ClinicManager.Models;
+using ClinicManager.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 
 namespace ClinicManager.Views.Patients
@@ -16,17 +14,19 @@ namespace ClinicManager.Views.Patients
     public class DetailsModel : PageModel
     {
         private readonly ClinicManager.Data.AppDbContext _context;
+        private readonly IPatientService _patientService;
         private readonly ILogger<DetailsModel> _logger;
         private readonly IWebHostEnvironment _env;
 
-        public DetailsModel(ClinicManager.Data.AppDbContext context, ILogger<DetailsModel> logger, IWebHostEnvironment env)
+        public DetailsModel(AppDbContext context, IPatientService patientService, ILogger<DetailsModel> logger, IWebHostEnvironment env)
         {
             _context = context;
+            _patientService = patientService;
             _logger = logger;
             _env = env;
         }
 
-        public Patient Patient { get; set; } = default!;
+        public PatientDto Patient { get; set; } = default!;
 
         public List<Visit> Visits { get; set; } = new();
 
@@ -42,7 +42,7 @@ namespace ClinicManager.Views.Patients
                 return NotFound();
             }
 
-            var patient = await _context.Patients.FirstOrDefaultAsync(m => m.Id == id);
+            var patient = await _patientService.GetPatientAsync(id.Value);
 
             if (patient is not null)
             {
@@ -67,20 +67,14 @@ namespace ClinicManager.Views.Patients
 
         public async Task<IActionResult> OnPostDeleteAsync(int id)
         {
-            var patient = await _context.Patients.FindAsync(id);
-            if (patient != null)
-            {
-                patient.IsDeleted = true;
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("Patient {PatientId} ({LastName}) soft-deleted", patient.Id, patient.LastName);
-            }
+            await _patientService.SoftDeletePatientAsync(id);
 
             return LocalRedirect(ReturnUrl);
         }
 
         public async Task<IActionResult> OnPostUploadAsync(int id, IFormFile? file)
         {
-            var patient = await _context.Patients.FindAsync(id);
+            var patient = await _patientService.GetPatientAsync(id);
             if (patient == null) return NotFound();
 
             if (file == null || file.Length == 0)
