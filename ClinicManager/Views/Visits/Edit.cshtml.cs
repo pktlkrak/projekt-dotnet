@@ -97,10 +97,15 @@ namespace ClinicManager.Views.Visits
             var visitInfo = new StringBuilder();
             visitInfo.AppendLine($"Date: {visit.ScheduledAt:d MMM yyyy HH:mm}");
             visitInfo.AppendLine($"Doctor: {doctor?.LastName} {doctor?.FirstName}");
-            var procedures = await _procedureService.GetAllProceduresAsync();
-            var procedureName = procedures.FirstOrDefault(p => p.Id == visit.ProcedureId)?.Name ?? "—";
-            visitInfo.AppendLine($"Procedure: {procedureName}");
-            visitInfo.Append($"Cost: {visit.Cost:C}");
+            var allProcedures = await _procedureService.GetAllProceduresAsync();
+            if (visit.Procedures.Any())
+                foreach (var pr in visit.Procedures)
+                {
+                    var name = allProcedures.FirstOrDefault(p => p.Id == pr.ProcedureId)?.Name ?? "?";
+                    visitInfo.AppendLine($"• {name}: {pr.Cost:C}");
+                }
+            else
+                visitInfo.AppendLine("Procedures: —");
 
             var prescriptionSections = visit.Prescriptions.Select((rx, i) =>
             {

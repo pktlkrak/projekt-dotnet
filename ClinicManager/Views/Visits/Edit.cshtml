@@ -36,10 +36,21 @@
                     <dd class="col-7">
                         <span class="badge @StatusBadge(Model.Visit.Status)">@Model.Visit.Status</span>
                     </dd>
-                    <dt class="col-5 text-muted">Procedure</dt>
-                    <dd class="col-7">@(Model.ProcedureItems.FirstOrDefault(p => p.Value == Model.Visit.ProcedureId?.ToString())?.Text ?? "—")</dd>
-                    <dt class="col-5 text-muted">Cost</dt>
-                    <dd class="col-7">@Model.Visit.Cost.ToString("C")</dd>
+                    <dt class="col-5 text-muted">Procedures</dt>
+                    <dd class="col-7">
+                        @if (!Model.Visit.Procedures.Any())
+                        {
+                            <text>—</text>
+                        }
+                        else
+                        {
+                            foreach (var pr in Model.Visit.Procedures)
+                            {
+                                var name = Model.ProcedureItems.FirstOrDefault(p => p.Value == pr.ProcedureId.ToString())?.Text ?? "?";
+                                <div>@name — @pr.Cost.ToString("C")</div>
+                            }
+                        }
+                    </dd>
                 </dl>
             </div>
         </div>
@@ -63,7 +74,6 @@
 
                     @if (!User.IsInRole("Doctor"))
                     {
-                        <!-- Scheduling fields for Admin or Registrar - Doctors do not need access to this. -->
                         <div class="row g-3 mb-3">
                             <div class="col-md-6">
                                 <label asp-for="Visit.ScheduledAt" class="form-label">Scheduled Time</label>
@@ -86,18 +96,44 @@
 
                     @if (User.IsInRole("Doctor"))
                     {
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-8">
-                                <label asp-for="Visit.ProcedureId" class="form-label">Procedure</label>
-                                <select asp-for="Visit.ProcedureId" asp-items="Model.ProcedureItems" class="form-select" id="edit-procedure-select">
-                                    <option value="">— select procedure —</option>
-                                </select>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="form-label mb-0">Procedures</label>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addProcRow()">+ Add</button>
                             </div>
-                            <div class="col-md-4">
-                                <label asp-for="Visit.Cost" class="form-label">Cost (PLN)</label>
-                                <input asp-for="Visit.Cost" type="number" step="0.01" min="0" class="form-control" id="edit-procedure-cost" />
+                            <div id="proc-container">
+                                @{ var editProcs = Model.Visit.Procedures.ToList(); }
+                                @for (int i = 0; i < editProcs.Count; i++)
+                                {
+                                    <div class="row g-2 mb-2 align-items-end proc-item-row">
+                                        <div class="col-md-7">
+                                            <select name="Visit.Procedures[@i].ProcedureId" class="form-select proc-select" required>
+                                                <option value="">— select —</option>
+                                                @foreach (var p in Model.ProcedureItems)
+                                                {
+                                                    if (p.Value == editProcs[i].ProcedureId.ToString())
+                                                    {
+                                                        <option value="@p.Value" selected>@p.Text</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@p.Value">@p.Text</option>
+                                                    }
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <input name="Visit.Procedures[@i].Cost" type="number" step="0.01" min="0"
+                                                   class="form-control proc-cost-input" value="@editProcs[i].Cost.ToString(System.Globalization.CultureInfo.InvariantCulture)" required />
+                                        </div>
+                                        <div class="col-md-1 d-flex pb-1">
+                                            <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeProcRow(this)">✕</button>
+                                        </div>
+                                    </div>
+                                }
                             </div>
                         </div>
+
                         <div class="mb-3">
                             <label asp-for="Visit.Survey" class="form-label">Interview / Wywiad</label>
                             <textarea asp-for="Visit.Survey" class="form-control" rows="3"></textarea>
@@ -160,7 +196,6 @@
                     </button>
                 </div>
 
-                <!-- Inline add-prescription form -->
                 <div id="add-prescription-form" class="collapse border-bottom">
                     <div class="p-3">
                         <form method="post" asp-page-handler="AddPrescription">
@@ -185,7 +220,6 @@
                     </div>
                 </div>
 
-                <!-- Existing prescriptions -->
                 <div class="card-body p-0">
                     @if (!Model.Visit.Prescriptions.Any())
                     {
@@ -276,6 +310,27 @@
         </div>
     </template>
 
+    <template id="proc-row-template">
+        <div class="row g-2 mb-2 align-items-end proc-item-row">
+            <div class="col-md-7">
+                <select name="Visit.Procedures[__idx__].ProcedureId" class="form-select proc-select" required>
+                    <option value="">— select —</option>
+                    @foreach (var p in Model.ProcedureItems)
+                    {
+                        <option value="@p.Value">@p.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <input name="Visit.Procedures[__idx__].Cost" type="number" step="0.01" min="0"
+                       class="form-control proc-cost-input" placeholder="Cost (PLN)" required />
+            </div>
+            <div class="col-md-1 d-flex pb-1">
+                <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeProcRow(this)">✕</button>
+            </div>
+        </div>
+    </template>
+
     <script>
         const rxCosts = @Html.Raw(costsJson);
         let rxRowIndex = 0;
@@ -314,13 +369,27 @@
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     @if (User.IsInRole("Doctor"))
     {
+        @using System.Text.Json
         <script>
             const editProcCosts = @Html.Raw(JsonSerializer.Serialize(Model.ProcedureCosts));
-            document.getElementById('edit-procedure-select')?.addEventListener('change', function () {
-                const id = parseInt(this.value);
-                const costInput = document.getElementById('edit-procedure-cost');
-                if (editProcCosts[id] !== undefined) costInput.value = editProcCosts[id].toFixed(2);
-            });
+            let procRowIndex = @Model.Visit.Procedures.Count;
+
+            function addProcRow() {
+                const template = document.getElementById('proc-row-template');
+                const clone = template.content.cloneNode(true);
+                const row = clone.querySelector('.proc-item-row');
+                row.innerHTML = row.innerHTML.replaceAll('__idx__', procRowIndex++);
+                row.querySelector('.proc-select').addEventListener('change', function () {
+                    const id = parseInt(this.value);
+                    const costInput = this.closest('.proc-item-row').querySelector('.proc-cost-input');
+                    if (editProcCosts[id] !== undefined) costInput.value = editProcCosts[id].toFixed(2);
+                });
+                document.getElementById('proc-container').appendChild(clone);
+            }
+
+            function removeProcRow(btn) {
+                btn.closest('.proc-item-row').remove();
+            }
         </script>
     }
 }

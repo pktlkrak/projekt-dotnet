@@ -28,10 +28,10 @@ namespace ClinicManager.Views.Visits
         [BindProperty]
         public VisitCreateDto Visit { get; set; } = new() { ScheduledAt = DateTime.Now.AddHours(1) };
 
-        public List<SelectListItem> PatientItems { get; set; } = new();
-        public List<SelectListItem> DoctorItems { get; set; } = new();
-        public List<SelectListItem> ProcedureItems { get; set; } = new();
-        public Dictionary<int, double> ProcedureCosts { get; set; } = new();
+        public List<SelectListItem> PatientItems { get; set; } = [];
+        public List<SelectListItem> DoctorItems { get; set; } = [];
+        public List<SelectListItem> ProcedureItems { get; set; } = [];
+        public Dictionary<int, double> ProcedureCosts { get; set; } = [];
 
         public async Task<IActionResult> OnGetAsync(string? doctorId = null, int? patientId = null)
         {
@@ -47,6 +47,9 @@ namespace ClinicManager.Views.Visits
 
         public async Task<IActionResult> OnPostAsync()
         {
+            if (!Visit.Procedures.Any())
+                ModelState.AddModelError("Visit.Procedures", "At least one procedure is required.");
+
             if (!ModelState.IsValid)
             {
                 await LoadSelectsAsync();

@@ -13,14 +13,11 @@ namespace ClinicManager.Models
         public DateTime ScheduledAt { get; set; }
         public VisitStatus Status { get; set; }
 
-        public double Cost { get; set; }
-
         public Patient? Patient { get; set; }
         public ApplicationUser? Doctor { get; set; }
 
-        public Procedure? Procedure { get; set; }
-
-        public ICollection<Perscription> Prescriptions { get; set; } = new List<Perscription>();
+        public ICollection<ProcedureRef> Procedures { get; set; } = [];
+        public ICollection<Perscription> Prescriptions { get; set; } = [];
 
         public string Survey { get; set; } = "";
         public string Diagnosis { get; set; } = "";

@@ -46,7 +46,8 @@ namespace ClinicManager.Services
         public async Task CreateVisitAsync(VisitCreateDto dto)
         {
             var visit = _mapper.ToEntity(dto);
-            visit.Procedure = dto.ProcedureId > 0 ? await _context.Procedures.FindAsync(dto.ProcedureId) : null;
+            foreach (var p in dto.Procedures)
+                visit.Procedures.Add(new ProcedureRef { ProcedureId = p.ProcedureId, Cost = p.Cost });
             _context.Visits.Add(visit);
             await _context.SaveChangesAsync();
         }
@@ -66,8 +67,7 @@ namespace ClinicManager.Services
 
             if (isDoctor)
             {
-                existing.Procedure = dto.ProcedureId.HasValue ? await _context.Procedures.FindAsync(dto.ProcedureId.Value) : null;
-                existing.Cost = dto.Cost;
+                ReplaceProcedureRefs(existing, dto.Procedures);
                 existing.Survey = dto.Survey;
                 existing.Diagnosis = dto.Diagnosis;
                 existing.Recommendations = dto.Recommendations;
@@ -78,7 +78,6 @@ namespace ClinicManager.Services
             }
 
             await _context.SaveChangesAsync();
-            await _context.Entry(existing).Reference(v => v.Procedure).LoadAsync();
             return MapDetail(existing);
         }
 
@@ -88,8 +87,7 @@ namespace ClinicManager.Services
             if (existing == null) return null;
 
             existing.Status = VisitStatus.Finished;
-            existing.Procedure = dto.ProcedureId.HasValue ? await _context.Procedures.FindAsync(dto.ProcedureId.Value) : null;
-            existing.Cost = dto.Cost;
+            ReplaceProcedureRefs(existing, dto.Procedures);
             existing.Survey = dto.Survey;
             existing.Diagnosis = dto.Diagnosis;
             existing.Recommendations = dto.Recommendations;
@@ -143,10 +141,25 @@ namespace ClinicManager.Services
             return true;
         }
 
+        private void ReplaceProcedureRefs(Visit visit, List<ProcedureRefDto> incoming)
+        {
+            _context.ProcedureRefs.RemoveRange(visit.Procedures);
+            visit.Procedures = incoming.Select(p => new ProcedureRef
+            {
+                VisitId = visit.Id,
+                ProcedureId = p.ProcedureId,
+                Cost = p.Cost
+            }).ToList();
+        }
+
         private VisitDetailDto MapDetail(Visit visit)
         {
             var dto = _mapper.ToDetailDto(visit);
-            dto.ProcedureId = visit.Procedure?.Id;
+            dto.Procedures = visit.Procedures.Select(pr => new ProcedureRefDto
+            {
+                ProcedureId = pr.ProcedureId,
+                Cost = pr.Cost
+            }).ToList();
             return dto;
         }
 
@@ -154,7 +167,7 @@ namespace ClinicManager.Services
             _context.Visits
                 .Include(v => v.Patient)
                 .Include(v => v.Doctor)
-                .Include(v => v.Procedure)
+                .Include(v => v.Procedures)
                 .Include(v => v.Prescriptions)
                     .ThenInclude(p => p.PerscriptionItem)
                         .ThenInclude(i => i.Medication)
