@@ -43,6 +43,23 @@ namespace ClinicManager.Services
             return _mapper.ToDtoList(visits);
         }
 
+        public async Task<bool> IsDoctorAvailableAsync(string doctorId, DateTime scheduledAt, int? excludeVisitId = null)
+        {
+            var from = scheduledAt.AddMinutes(-90);
+            var to = scheduledAt.AddMinutes(90);
+
+            var query = _context.Visits
+                .Where(v => v.DoctorId == doctorId
+                         && v.ScheduledAt > from
+                         && v.ScheduledAt < to
+                         && v.Status != VisitStatus.Cancelled);
+
+            if (excludeVisitId.HasValue)
+                query = query.Where(v => v.Id != excludeVisitId.Value);
+
+            return !await query.AnyAsync();
+        }
+
         public async Task CreateVisitAsync(VisitCreateDto dto)
         {
             var visit = _mapper.ToEntity(dto);

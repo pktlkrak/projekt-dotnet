@@ -50,6 +50,9 @@ namespace ClinicManager.Views.Visits
             if (!Visit.Procedures.Any())
                 ModelState.AddModelError("Visit.Procedures", "At least one procedure is required.");
 
+            if (ModelState.IsValid && !await _visitService.IsDoctorAvailableAsync(Visit.DoctorId, Visit.ScheduledAt))
+                ModelState.AddModelError("Visit.ScheduledAt", "The doctor already has an appointment within 1.5 hours of this time.");
+
             if (!ModelState.IsValid)
             {
                 await LoadSelectsAsync();
