@@ -1,0 +1,58 @@
+@page
+@model ClinicManager.Views.Reports.IndexModel
+
+@{
+    ViewData["Title"] = "Reports";
+}
+
+<h1 class="mb-4">Reports</h1>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header fw-semibold">Monthly Procedure Breakdown</div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">
+                    Generates a PDF listing all non-cancelled visits for the selected doctor and month,
+                    with a per-procedure summary and totals.
+                </p>
+                <form method="get" asp-page="/Reports/Index">
+                    <input type="hidden" name="handler" value="Pdf" />
+                    <div class="mb-3">
+                        <label class="form-label">Doctor</label>
+                        <select name="doctorId" class="form-select" required>
+                            <option value="">— select a doctor —</option>
+                            @foreach (var d in Model.DoctorItems)
+                            {
+                                if (d.Value == Model.DoctorId)
+                                { <option value="@d.Value" selected>@d.Text</option> }
+                                else
+                                { <option value="@d.Value">@d.Text</option> }
+                            }
+                        </select>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col">
+                            <label class="form-label">Year</label>
+                            <input name="year" type="number" class="form-control" value="@Model.Year" min="2000" max="2100" required />
+                        </div>
+                        <div class="col">
+                            <label class="form-label">Month</label>
+                            <select name="month" class="form-select" required>
+                                @for (int m = 1; m <= 12; m++)
+                                {
+                                    var label = new DateTime(2000, m, 1).ToString("MMMM", System.Globalization.CultureInfo.InvariantCulture);
+                                    if (m == Model.Month)
+                                    { <option value="@m" selected>@label</option> }
+                                    else
+                                    { <option value="@m">@label</option> }
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Generate PDF</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

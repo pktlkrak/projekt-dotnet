@@ -2,6 +2,7 @@ using ClinicManager.Dtos.MedicalFiles;
 using ClinicManager.Dtos.Patients;
 using ClinicManager.Dtos.Visits;
 using ClinicManager.Services;
+using ClinicManager.Utils.PDF;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -14,14 +15,16 @@ namespace ClinicManager.Views.Patients
         private readonly IPatientService _patientService;
         private readonly IVisitService _visitService;
         private readonly IMedicalFileService _medicalFileService;
+        private readonly IReportService _reportService;
         private readonly ILogger<DetailsModel> _logger;
         private readonly IWebHostEnvironment _env;
 
-        public DetailsModel(IPatientService patientService, IVisitService visitService, IMedicalFileService medicalFileService, ILogger<DetailsModel> logger, IWebHostEnvironment env)
+        public DetailsModel(IPatientService patientService, IVisitService visitService, IMedicalFileService medicalFileService, IReportService reportService, ILogger<DetailsModel> logger, IWebHostEnvironment env)
         {
             _patientService = patientService;
             _visitService = visitService;
             _medicalFileService = medicalFileService;
+            _reportService = reportService;
             _logger = logger;
             _env = env;
         }
@@ -56,6 +59,18 @@ namespace ClinicManager.Views.Patients
 
             _logger.LogWarning("Details requested for non-existent patient {PatientId}", id);
             return NotFound();
+        }
+
+        public async Task<IActionResult> OnGetPatientReportPdfAsync(int id)
+        {
+            if (!User.IsInRole("Admin")) return Forbid();
+
+            var data = await _reportService.GetPatientReportAsync(id);
+            if (data == null) return NotFound();
+
+            var bytes = PdfAdminReportWriter.GeneratePatientReport(data);
+            var filename = $"patient-report-{data.PatientName.Replace(" ", "-").ToLower()}-{data.Pesel}.pdf";
+            return File(bytes, "application/pdf", filename);
         }
 
         public async Task<IActionResult> OnPostDeleteAsync(int id)

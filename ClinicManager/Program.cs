@@ -97,6 +97,7 @@ builder.Services.AddScoped<IProcedureService, ProcedureService>();
 
 builder.Services.AddScoped<VisitMapper>();
 builder.Services.AddScoped<IVisitService, VisitService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
 builder.Services.AddScoped<MedicalFileMapper>();
 builder.Services.AddScoped<IMedicalFileService, MedicalFileService>();
