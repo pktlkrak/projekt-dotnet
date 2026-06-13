@@ -11,6 +11,7 @@ namespace ClinicManager.Mapping
         public partial List<MedicationDto> ToDtoList(List<Medication> medications);
         public partial MedicationFormDto ToFormDto(Medication medication);
 
+        [MapperIgnoreTarget(nameof(Medication.Id))]
         public partial Medication ToEntity(MedicationFormDto dto);
 
         [MapperIgnoreTarget(nameof(Medication.Id))]

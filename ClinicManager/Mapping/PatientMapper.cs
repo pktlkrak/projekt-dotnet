@@ -13,6 +13,7 @@ namespace ClinicManager.Mapping
 
         public partial PatientFormDto ToFormDto(Patient patient);
 
+        [MapperIgnoreTarget(nameof(Patient.Id))]
         [MapperIgnoreTarget(nameof(Patient.IsDeleted))]
         [MapperIgnoreTarget(nameof(Patient.Visits))]
         public partial Patient ToEntity(PatientFormDto dto);
