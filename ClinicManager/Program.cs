@@ -116,6 +116,7 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddRazorPages().WithRazorPagesRoot("/Views");
 builder.Services.AddSession();
+builder.Services.AddHostedService<ReportBackgroundService>();
 
 var app = builder.Build();
 

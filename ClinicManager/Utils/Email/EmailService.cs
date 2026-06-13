@@ -16,6 +16,8 @@ public class EmailService : IEmailService
         _settings = settings.Value;
     }
 
+    public string AdminAddress { get => _settings.FromAddress; }
+
     public async Task SendAsync(string to, string subject, string body, bool isHtml, params EmailAttachment[] attachments)
     {
         var message = new MimeMessage();

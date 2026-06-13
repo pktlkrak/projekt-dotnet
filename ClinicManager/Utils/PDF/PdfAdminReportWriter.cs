@@ -120,6 +120,116 @@ public static class PdfAdminReportWriter
         })).GeneratePdf();
     }
 
+    public static byte[] GenerateDailyReport(DailyReportData data)
+    {
+        var dayName = new DateTime(data.Year, data.Month, data.Day)
+            .ToString("dddd, dd MMMM yyyy", CultureInfo.InvariantCulture);
+
+        return Document.Create(container => container.Page(page =>
+        {
+            page.Size(PageSizes.A4);
+            page.Margin(2, Unit.Centimetre);
+            page.DefaultTextStyle(t => t.FontSize(10).FontFamily("Arial"));
+
+            page.Header().PaddingBottom(12).Column(col =>
+            {
+                col.Item().Text("Daily Procedure Report").SemiBold().FontSize(16);
+                col.Item().PaddingTop(2).Text(dayName).FontSize(10).FontColor(Colors.Grey.Darken1);
+                col.Item().PaddingTop(6).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+            });
+
+            page.Content().PaddingTop(10).Column(body =>
+            {
+                body.Spacing(16);
+
+                // Visits table
+                body.Item().Text("Visits").SemiBold().FontSize(11);
+                body.Item().Table(table =>
+                {
+                    table.ColumnsDefinition(cols =>
+                    {
+                        cols.ConstantColumn(55);   // time
+                        cols.RelativeColumn(2);    // doctor
+                        cols.RelativeColumn(2);    // patient
+                        cols.RelativeColumn();     // status
+                        cols.RelativeColumn(3);    // procedures
+                        cols.ConstantColumn(65);   // total
+                    });
+
+                    table.Header(header =>
+                    {
+                        foreach (var label in new[] { "Time", "Doctor", "Patient", "Status", "Procedures", "Total" })
+                            header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text(label).SemiBold().FontSize(9);
+                    });
+
+                    foreach (var (visit, idx) in data.Visits.Select((v, i) => (v, i)))
+                    {
+                        var bg = idx % 2 == 0 ? Colors.White : Colors.Grey.Lighten5;
+                        var procs = visit.Procedures.Count > 0
+                            ? string.Join("\n", visit.Procedures.Select(p => $"• {p.Name}  {p.Cost:C}"))
+                            : "—";
+                        var total = visit.Procedures.Sum(p => p.Cost);
+
+                        table.Cell().Background(bg).Padding(5).Text(visit.ScheduledAt.ToString("HH:mm")).FontSize(9);
+                        table.Cell().Background(bg).Padding(5).Text(visit.DoctorName).FontSize(9);
+                        table.Cell().Background(bg).Padding(5).Text(visit.PatientName).FontSize(9);
+                        table.Cell().Background(bg).Padding(5).Text(visit.Status.ToString()).FontSize(9);
+                        table.Cell().Background(bg).Padding(5).Text(procs).FontSize(9);
+                        table.Cell().Background(bg).Padding(5).AlignRight().Text(total.ToString("C")).FontSize(9);
+                    }
+
+                    if (data.Visits.Count == 0)
+                    {
+                        table.Cell().ColumnSpan(6).Padding(10).AlignCenter()
+                            .Text("No visits recorded for this day.").FontColor(Colors.Grey.Medium);
+                    }
+                });
+
+                // Summary by procedure
+                var summary = data.Visits
+                    .SelectMany(v => v.Procedures)
+                    .GroupBy(p => p.Name)
+                    .Select(g => (Name: g.Key, Count: g.Count(), Total: g.Sum(p => p.Cost)))
+                    .OrderByDescending(s => s.Total)
+                    .ToList();
+
+                if (summary.Count > 0)
+                {
+                    body.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                    body.Item().Text("Summary by Procedure").SemiBold().FontSize(11);
+                    body.Item().Table(table =>
+                    {
+                        table.ColumnsDefinition(cols =>
+                        {
+                            cols.RelativeColumn(4);
+                            cols.ConstantColumn(60);
+                            cols.ConstantColumn(90);
+                        });
+
+                        table.Header(header =>
+                        {
+                            foreach (var label in new[] { "Procedure", "Count", "Total Cost" })
+                                header.Cell().Background(Colors.Grey.Lighten3).Padding(5).Text(label).SemiBold().FontSize(9);
+                        });
+
+                        foreach (var (row, idx) in summary.Select((r, i) => (r, i)))
+                        {
+                            var bg = idx % 2 == 0 ? Colors.White : Colors.Grey.Lighten5;
+                            table.Cell().Background(bg).Padding(5).Text(row.Name).FontSize(9);
+                            table.Cell().Background(bg).Padding(5).AlignCenter().Text(row.Count.ToString()).FontSize(9);
+                            table.Cell().Background(bg).Padding(5).AlignRight().Text(row.Total.ToString("C")).FontSize(9);
+                        }
+
+                        var grandTotal = summary.Sum(s => s.Total);
+                        table.Cell().Padding(5).Text("Grand Total").SemiBold().FontSize(9);
+                        table.Cell().Padding(5).AlignCenter().Text(summary.Sum(s => s.Count).ToString()).SemiBold().FontSize(9);
+                        table.Cell().Padding(5).AlignRight().Text(grandTotal.ToString("C")).SemiBold().FontSize(9);
+                    });
+                }
+            });
+        })).GeneratePdf();
+    }
+
     public static byte[] GeneratePatientReport(PatientReportData data)
     {
         return Document.Create(container => container.Page(page =>

@@ -68,4 +68,38 @@ public class ReportService(AppDbContext context, UserManager<ApplicationUser> us
             rows
         );
     }
+
+    public async Task<DailyReportData?> GetDailyReportAsync(int year, int month, int day)
+    {
+        DateTime from;
+        try
+        {
+            from = new DateTime(year, month, day);
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            return null;
+        }
+        var to = from.AddDays(1);
+
+        var visits = await context.Visits
+            .Include(v => v.Doctor)
+            .Include(v => v.Patient)
+            .Include(v => v.Procedures).ThenInclude(pr => pr.Procedure)
+            .Where(v => v.ScheduledAt >= from
+                    && v.ScheduledAt < to
+                    && v.Status != VisitStatus.Cancelled)
+            .OrderBy(v => v.ScheduledAt)
+            .ToListAsync();
+
+        var rows = visits.Select(v => new DailyVisitRow(
+            $"{v.Doctor?.LastName} {v.Doctor?.FirstName}",
+            v.ScheduledAt,
+            $"{v.Patient?.LastName} {v.Patient?.FirstName}",
+            v.Status,
+            v.Procedures.Select(pr => (pr.Procedure?.Name ?? "?", pr.Cost)).ToList()
+        )).ToList();
+
+        return new DailyReportData(year, month, day, rows);
+    }
 }
