@@ -37,6 +37,9 @@ namespace ClinicManager.Views.Visits
         public PrescriptionFormDto NewPrescription { get; set; } = new();
 
         [BindProperty]
+        public PrescriptionFormDto EditPrescription { get; set; } = new();
+
+        [BindProperty]
         public string ReturnUrl { get; set; } = "/Doctor/Index";
 
         [TempData]
@@ -169,6 +172,10 @@ namespace ClinicManager.Views.Visits
                 itemsText.AppendLine($"• {item.Medication?.Name}  |  {item.Dosage}  |  {item.Amount}  |  {item.Price:C}");
             itemsText.Append($"Total: {rx.r.PerscriptionItem.Sum(it => it.Price):C}");
 
+            PdfSection[] bottomLeft = string.IsNullOrWhiteSpace(rx.r.Description)
+                ? [new("Medications", itemsText.ToString().TrimEnd())]
+                : [new("Description", rx.r.Description), new("Medications", itemsText.ToString().TrimEnd())];
+
             var data = new PdfReportData(
                 $"Prescription #{index} — {patient?.LastName} {patient?.FirstName}",
                 $"{visit.ScheduledAt:d MMM yyyy}  ·  Dr. {doctor?.LastName} {doctor?.FirstName}"
@@ -176,7 +183,7 @@ namespace ClinicManager.Views.Visits
             {
                 TopLeft = [new("Patient", patientInfo.ToString().TrimEnd())],
                 TopRight = [new("Visit", visitInfo.ToString().TrimEnd())],
-                BottomLeft = [new("Medications", itemsText.ToString().TrimEnd())],
+                BottomLeft = bottomLeft,
             };
 
             var bytes = PdfReportWriter.GenerateBytes(data);
@@ -247,6 +254,25 @@ namespace ClinicManager.Views.Visits
             return RedirectToPage(new { id = NewPrescription.VisitId });
         }
 
+        public async Task<IActionResult> OnPostUpdatePrescriptionAsync(int prescriptionId)
+        {
+            var doctorId = _userManager.GetUserId(User);
+            var owner = await _visitService.GetPrescriptionOwnerAsync(prescriptionId);
+            if (owner == null) return NotFound();
+            if (owner.DoctorId != doctorId) return Forbid();
+
+            if (!EditPrescription.Items.Any(i => i.MedicationId > 0))
+            {
+                StatusMessage = "At least one medication is required.";
+                return RedirectToPage(new { id = owner.VisitId });
+            }
+
+            await _visitService.UpdatePrescriptionAsync(prescriptionId, EditPrescription);
+
+            StatusMessage = "Prescription updated.";
+            return RedirectToPage(new { id = owner.VisitId });
+        }
+
         public async Task<IActionResult> OnPostDeletePrescriptionAsync(int prescriptionId)
         {
             var owner = await _visitService.GetPrescriptionOwnerAsync(prescriptionId);
@@ -296,11 +322,26 @@ namespace ClinicManager.Views.Visits
             var prescriptionSections = visit.Prescriptions.Select((rx, i) =>
             {
                 var sb = new StringBuilder();
+                if (!string.IsNullOrWhiteSpace(rx.Description))
+                    sb.AppendLine(rx.Description).AppendLine();
                 foreach (var item in rx.PerscriptionItem)
                     sb.AppendLine($"• {item.Medication?.Name}  |  {item.Dosage}  |  {item.Amount}  |  {item.Price:C}");
                 sb.Append($"Total: {rx.PerscriptionItem.Sum(it => it.Price):C}");
-                return new PdfSection($"Prescription #{i + 1}", sb.ToString());
+                return new PdfSection($"Prescription #{i + 1}", sb.ToString().TrimEnd());
             }).ToArray();
+
+            PdfSection[] bottomLeft;
+            if (prescriptionSections.Length == 0)
+            {
+                bottomLeft = [new("Prescriptions", "None")];
+            }
+            else
+            {
+                var grandTotal = visit.Prescriptions
+                    .SelectMany(rx => rx.PerscriptionItem)
+                    .Sum(it => it.Price);
+                bottomLeft = [..prescriptionSections, new("Grand Total", grandTotal.ToString("C"))];
+            }
 
             return new PdfReportData(
                 $"Visit Report — {patient?.LastName} {patient?.FirstName}",
@@ -315,7 +356,7 @@ namespace ClinicManager.Views.Visits
                     new("Diagnosis", string.IsNullOrWhiteSpace(visit.Diagnosis) ? "—" : visit.Diagnosis),
                     new("Recommendations", string.IsNullOrWhiteSpace(visit.Recommendations) ? "—" : visit.Recommendations),
                 ],
-                BottomLeft = prescriptionSections.Length > 0 ? prescriptionSections : [new("Prescriptions", "None")],
+                BottomLeft = bottomLeft,
             };
         }
 

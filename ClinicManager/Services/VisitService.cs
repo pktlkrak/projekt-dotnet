@@ -113,6 +113,31 @@ namespace ClinicManager.Services
             return MapDetail(existing);
         }
 
+        public async Task UpdatePrescriptionAsync(int prescriptionId, PrescriptionFormDto dto)
+        {
+            var prescription = await _context.Perscriptions
+                .Include(p => p.PerscriptionItem)
+                .FirstOrDefaultAsync(p => p.Id == prescriptionId);
+
+            if (prescription == null) return;
+
+            prescription.Description = dto.Description;
+
+            _context.PerscriptionItems.RemoveRange(prescription.PerscriptionItem);
+
+            prescription.PerscriptionItem = dto.Items
+                .Where(i => i.MedicationId > 0)
+                .Select(i => new PerscriptionItem
+                {
+                    MedicationId = i.MedicationId,
+                    Dosage = i.Dosage,
+                    Amount = i.Amount,
+                    Price = double.TryParse(i.Price, NumberStyles.Any, CultureInfo.InvariantCulture, out var p) ? p : 0
+                }).ToList();
+
+            await _context.SaveChangesAsync();
+        }
+
         public async Task AddPrescriptionAsync(PrescriptionFormDto dto)
         {
             var validItems = dto.Items.Where(i => i.MedicationId > 0).ToList();

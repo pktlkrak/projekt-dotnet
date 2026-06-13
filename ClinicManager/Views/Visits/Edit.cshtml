@@ -189,22 +189,22 @@
     </div>
 </div>
 
-@if (User.IsInRole("Doctor"))
-{
-    @using System.Text.Json
-    var costsJson = JsonSerializer.Serialize(Model.MedicationCosts);
-
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0 text-muted text-uppercase small fw-semibold">Prescriptions</h6>
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 text-muted text-uppercase small fw-semibold">Prescriptions</h6>
+                @if (User.IsInRole("Doctor"))
+                {
                     <button class="btn btn-primary btn-sm" type="button"
                             data-bs-toggle="collapse" data-bs-target="#add-prescription-form">
                         + Add Prescription
                     </button>
-                </div>
+                }
+            </div>
 
+            @if (User.IsInRole("Doctor"))
+            {
                 <div id="add-prescription-form" class="collapse border-bottom">
                     <div class="p-3">
                         <form method="post" asp-page-handler="AddPrescription">
@@ -228,29 +228,45 @@
                         </form>
                     </div>
                 </div>
+            }
 
-                <div class="card-body p-0">
-                    @if (!Model.Visit.Prescriptions.Any())
+            <div class="card-body p-0">
+                @if (!Model.Visit.Prescriptions.Any())
+                {
+                    <p class="text-muted p-3 mb-0">No prescriptions for this visit.</p>
+                }
+                else
+                {
+                    @foreach (var (rx, i) in Model.Visit.Prescriptions.Select((r, idx) => (r, idx)))
                     {
-                        <p class="text-muted p-3 mb-0">No prescriptions for this visit.</p>
-                    }
-                    else
-                    {
-                        @foreach (var (rx, i) in Model.Visit.Prescriptions.Select((r, idx) => (r, idx)))
-                        {
-                            <div class="px-3 pt-3 @(i > 0 ? "border-top" : "")">
+                        <div class="@(i > 0 ? "border-top" : "")">
+                            <div class="px-3 pt-3">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="fw-semibold">Prescription #@(i + 1)</span>
+                                    <div>
+                                        <span class="fw-semibold">Prescription #@(i + 1)</span>
+                                        @if (!string.IsNullOrWhiteSpace(rx.Description))
+                                        {
+                                            <span class="text-muted small ms-2">@rx.Description</span>
+                                        }
+                                    </div>
                                     <div class="d-flex gap-2">
+                                        @if (User.IsInRole("Doctor"))
+                                        {
+                                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                    data-bs-toggle="collapse" data-bs-target="#edit-rx-@rx.Id">Edit</button>
+                                        }
                                         <a asp-page-handler="PrescriptionPdf"
                                            asp-route-id="@Model.Visit.Id"
                                            asp-route-prescriptionId="@rx.Id"
                                            class="btn btn-outline-secondary btn-sm">PDF</a>
-                                        <form method="post" asp-page-handler="DeletePrescription"
-                                              onsubmit="return confirm('Delete this prescription?')">
-                                            <input type="hidden" name="prescriptionId" value="@rx.Id" />
-                                            <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
-                                        </form>
+                                        @if (User.IsInRole("Doctor"))
+                                        {
+                                            <form method="post" asp-page-handler="DeletePrescription"
+                                                  onsubmit="return confirm('Delete this prescription?')">
+                                                <input type="hidden" name="prescriptionId" value="@rx.Id" />
+                                                <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                                            </form>
+                                        }
                                     </div>
                                 </div>
                                 <table class="table table-sm mb-2">
@@ -281,13 +297,83 @@
                                     </tfoot>
                                 </table>
                             </div>
-                        }
-                        <div class="pb-1"></div>
+
+                            @if (User.IsInRole("Doctor"))
+                            {
+                                <div id="edit-rx-@rx.Id" class="collapse border-top bg-light">
+                                    <div class="p-3">
+                                        <form method="post" asp-page-handler="UpdatePrescription"
+                                              asp-route-prescriptionId="@rx.Id">
+                                            <input type="hidden" name="EditPrescription.VisitId" value="@Model.Visit.Id" />
+
+                                            <div class="mb-3">
+                                                <label class="form-label small">Description / Opis</label>
+                                                <textarea name="EditPrescription.Description" class="form-control form-control-sm" rows="2">@rx.Description</textarea>
+                                            </div>
+
+                                            <h6 class="text-muted small fw-semibold mb-2">Medications</h6>
+                                            <div class="edit-rx-items-container" data-row-count="@rx.PerscriptionItem.Count">
+                                                @for (int j = 0; j < rx.PerscriptionItem.Count; j++)
+                                                {
+                                                    var item = rx.PerscriptionItem[j];
+                                                    <div class="row g-2 mb-2 align-items-end rx-item-row">
+                                                        <div class="col-md-4">
+                                                            <select name="EditPrescription.Items[@j].MedicationId" class="form-select form-select-sm rx-med-select" required>
+                                                                <option value="">— select —</option>
+                                                                @foreach (var m in Model.MedicationItems)
+                                                                {
+                                                                    if (m.Value == item.MedicationId.ToString())
+                                                                    { <option value="@m.Value" selected>@m.Text</option> }
+                                                                    else
+                                                                    { <option value="@m.Value">@m.Text</option> }
+                                                                }
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <input name="EditPrescription.Items[@j].Dosage" class="form-control form-control-sm" value="@item.Dosage" placeholder="Dosage" required />
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <input name="EditPrescription.Items[@j].Amount" class="form-control form-control-sm" value="@item.Amount" placeholder="Amount" required />
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <input name="EditPrescription.Items[@j].Price" type="number" step="0.01" min="0"
+                                                                   class="form-control form-control-sm rx-price-input"
+                                                                   value="@item.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)" required />
+                                                        </div>
+                                                        <div class="col-md-1 d-flex pb-1">
+                                                            <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeRxRow(this)">✕</button>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm mb-3"
+                                                    onclick="addEditRxRow(this)">+ Add Medication</button>
+
+                                            <div class="d-flex gap-2">
+                                                <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                        data-bs-toggle="collapse" data-bs-target="#edit-rx-@rx.Id">Cancel</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            }
+                        </div>
                     }
-                </div>
+                    <div class="px-3 py-2 border-top d-flex justify-content-end gap-3">
+                        <span class="text-muted small fw-semibold align-self-center">All Prescriptions Total</span>
+                        <span class="fw-bold">@Model.Visit.Prescriptions.SelectMany((ClinicManager.Dtos.Visits.PrescriptionDto r) => r.PerscriptionItem).Sum((ClinicManager.Dtos.Visits.PrescriptionItemDto it) => it.Price).ToString("C")</span>
+                    </div>
+                }
             </div>
         </div>
     </div>
+</div>
+
+@if (User.IsInRole("Doctor"))
+{
+    @using System.Text.Json
+    var costsJson = JsonSerializer.Serialize(Model.MedicationCosts);
 
     <template id="rx-row-template">
         <div class="row g-2 mb-2 align-items-end rx-item-row">
@@ -312,6 +398,32 @@
             <div class="col-md-2">
                 <label class="form-label small">Price (PLN)</label>
                 <input name="NewPrescription.Items[__idx__].Price" type="number" step="0.01" min="0" class="form-control rx-price-input" required />
+            </div>
+            <div class="col-md-1 d-flex pb-1">
+                <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeRxRow(this)">✕</button>
+            </div>
+        </div>
+    </template>
+
+    <template id="edit-rx-row-template">
+        <div class="row g-2 mb-2 align-items-end rx-item-row">
+            <div class="col-md-4">
+                <select name="EditPrescription.Items[__idx__].MedicationId" class="form-select form-select-sm rx-med-select" required>
+                    <option value="">— select —</option>
+                    @foreach (var m in Model.MedicationItems)
+                    {
+                        <option value="@m.Value">@m.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input name="EditPrescription.Items[__idx__].Dosage" class="form-control form-control-sm" placeholder="Dosage" required />
+            </div>
+            <div class="col-md-2">
+                <input name="EditPrescription.Items[__idx__].Amount" class="form-control form-control-sm" placeholder="Amount" required />
+            </div>
+            <div class="col-md-2">
+                <input name="EditPrescription.Items[__idx__].Price" type="number" step="0.01" min="0" class="form-control form-control-sm rx-price-input" required />
             </div>
             <div class="col-md-1 d-flex pb-1">
                 <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeRxRow(this)">✕</button>
@@ -360,6 +472,22 @@
         function removeRxRow(btn) {
             btn.closest('.rx-item-row').remove();
         }
+
+        function addEditRxRow(btn) {
+            const container = btn.previousElementSibling;
+            const count = parseInt(container.dataset.rowCount);
+            const template = document.getElementById('edit-rx-row-template');
+            const clone = template.content.cloneNode(true);
+            const row = clone.querySelector('.rx-item-row');
+            row.innerHTML = row.innerHTML.replaceAll('__idx__', count);
+            row.querySelector('.rx-med-select').addEventListener('change', function () {
+                const id = parseInt(this.value);
+                const priceInput = this.closest('.rx-item-row').querySelector('.rx-price-input');
+                if (rxCosts[id] !== undefined) priceInput.value = rxCosts[id].toFixed(2);
+            });
+            container.dataset.rowCount = count + 1;
+            container.appendChild(clone);
+        }
     </script>
 }
 
@@ -378,7 +506,6 @@
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     @if (User.IsInRole("Doctor"))
     {
-        @using System.Text.Json
         <script>
             const editProcCosts = @Html.Raw(JsonSerializer.Serialize(Model.ProcedureCosts));
             let procRowIndex = @Model.Visit.Procedures.Count;

@@ -15,6 +15,7 @@ namespace ClinicManager.Services
         Task<VisitDetailDto?> FinishVisitAsync(int id, VisitDetailDto dto);
 
         Task AddPrescriptionAsync(PrescriptionFormDto dto);
+        Task UpdatePrescriptionAsync(int prescriptionId, PrescriptionFormDto dto);
         Task<PrescriptionOwnerDto?> GetPrescriptionOwnerAsync(int prescriptionId);
         Task<bool> DeletePrescriptionAsync(int prescriptionId);
     }
