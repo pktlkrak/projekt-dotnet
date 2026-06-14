@@ -43,27 +43,27 @@ public class ReportBackgroundService(
         var reportService = scope.ServiceProvider.GetRequiredService<IReportService>();
         var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
 
-        var today = DateTime.Today;
-        var report = await reportService.GetDailyReportAsync(today.Year, today.Month, today.Day);
+        var tomorrow = DateTime.Today.AddDays(1);
+        var report = await reportService.GetDailyReportAsync(tomorrow.Year, tomorrow.Month, tomorrow.Day);
 
         if (report is null)
         {
-            logger.LogWarning("Daily report returned null for {Date:yyyy-MM-dd}.", today);
+            logger.LogWarning("Daily report returned null for {Date:yyyy-MM-dd}.", tomorrow);
             return;
         }
 
         logger.LogInformation(
             "Generated daily report for {Date:yyyy-MM-dd} with {Count} visit(s).",
-            today, report.Visits.Count);
+            tomorrow, report.Visits.Count);
 
         var pdf = PdfAdminReportWriter.GenerateDailyReport(report);
-        // await File.WriteAllBytesAsync($"reports/daily-{today:yyyy-MM-dd}.pdf", pdf, ct);
+        // await File.WriteAllBytesAsync($"reports/daily-{tomorrow:yyyy-MM-dd}.pdf", pdf, ct);
         await emailService.SendAsync(
             emailService.AdminAddress,
-            $"Daily report for {today}",
-            "Attached you may find the daily report for today.",
+            $"Daily report for {tomorrow}",
+            "Attached you may find the daily report for tomorrow.",
             false,
-            new EmailAttachment(pdf, $"report-{today}.pdf", "application/pdf")
+            new EmailAttachment(pdf, $"report-{tomorrow:yyyy-MM-dd}.pdf", "application/pdf")
         );
         logger.LogInformation("Report sent.");
     }
