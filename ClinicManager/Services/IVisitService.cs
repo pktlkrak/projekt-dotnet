@@ -6,6 +6,7 @@ namespace ClinicManager.Services
     {
         Task<List<VisitDto>> GetTodaysVisitsForDoctorAsync(string doctorId);
         Task<List<VisitDto>> GetVisitsForPatientAsync(int patientId);
+        Task<List<VisitDto>> GetActiveVisitsAsync();
 
         Task<bool> IsDoctorAvailableAsync(string doctorId, DateTime scheduledAt, int? excludeVisitId = null);
         Task CreateVisitAsync(VisitCreateDto dto);

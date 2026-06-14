@@ -1,5 +1,6 @@
 using ClinicManager.Data;
 using ClinicManager.Dtos.Medications;
+using ClinicManager.Dtos.Visits;
 using ClinicManager.Mapping;
 using ClinicManager.Models;
 using ClinicManager.Services;
@@ -233,6 +234,18 @@ medicationsApi.MapDelete("/{id:int}", async (int id, IMedicationService medicati
 .WithName("DeleteMedication")
 .Produces<MedicationDto>(StatusCodes.Status200OK)
 .Produces(StatusCodes.Status404NotFound);
+
+var visitsApi = app.MapGroup("/api/visits")
+    .WithTags("Visits")
+    .AllowAnonymous();
+
+visitsApi.MapGet("/active", async (IVisitService visitService) =>
+{
+    var visits = await visitService.GetActiveVisitsAsync();
+    return Results.Ok(visits);
+})
+.WithName("GetActiveVisits")
+.Produces<List<VisitDto>>(StatusCodes.Status200OK);
 
 static IResult? ValidateMedication(MedicationFormDto dto)
 {

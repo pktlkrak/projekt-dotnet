@@ -1,5 +1,6 @@
 using System.Globalization;
 using ClinicManager.Data;
+using ClinicManager.Dtos.Common;
 using ClinicManager.Dtos.Visits;
 using ClinicManager.Mapping;
 using ClinicManager.Models;
@@ -42,6 +43,28 @@ namespace ClinicManager.Services
 
             return _mapper.ToDtoList(visits);
         }
+
+        public Task<List<VisitDto>> GetActiveVisitsAsync() =>
+            _context.Visits
+                .Where(v => v.Status == VisitStatus.Scheduled || v.Status == VisitStatus.InProgress)
+                .OrderBy(v => v.ScheduledAt)
+                .Select(v => new VisitDto
+                {
+                    Id = v.Id,
+                    ScheduledAt = v.ScheduledAt,
+                    Status = v.Status,
+                    Patient = v.Patient == null ? null : new PersonNameDto
+                    {
+                        FirstName = v.Patient.FirstName,
+                        LastName = v.Patient.LastName
+                    },
+                    Doctor = v.Doctor == null ? null : new PersonNameDto
+                    {
+                        FirstName = v.Doctor.FirstName,
+                        LastName = v.Doctor.LastName
+                    }
+                })
+                .ToListAsync();
 
         public async Task<bool> IsDoctorAvailableAsync(string doctorId, DateTime scheduledAt, int? excludeVisitId = null)
         {

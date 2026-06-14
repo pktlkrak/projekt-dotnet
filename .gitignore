@@ -110,3 +110,6 @@ wwwroot/uploads/*
 
 ClinicManager/wwwroot/medicalDocuments/*
 !ClinicManager/wwwroot/medicalDocuments/.gitkeep
+
+# NBomber load test reports
+NBomberTests/reports/

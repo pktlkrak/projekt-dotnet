@@ -6,8 +6,7 @@ using ClinicManager.Services;
 
 public class ReportBackgroundService(
     IServiceScopeFactory scopeFactory,
-    ILogger<ReportBackgroundService> logger,
-    IEmailService emailService
+    ILogger<ReportBackgroundService> logger
 ) : BackgroundService
 {
     // TODO: Change this to 1 day for actual deploymentL
@@ -38,10 +37,11 @@ public class ReportBackgroundService(
 
     private async Task RunAsync(CancellationToken ct)
     {
-        // IReportService is scoped (DbContext / UserManager), so resolve it
-        // inside a fresh scope on each tick rather than injecting it directly.
+        // IReportService and IEmailService are scoped, so resolve them
+        // inside a fresh scope on each tick rather than injecting them directly.
         using var scope = scopeFactory.CreateScope();
         var reportService = scope.ServiceProvider.GetRequiredService<IReportService>();
+        var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
 
         var today = DateTime.Today;
         var report = await reportService.GetDailyReportAsync(today.Year, today.Month, today.Day);

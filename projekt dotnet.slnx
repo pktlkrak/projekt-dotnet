@@ -6,4 +6,5 @@
   </Configurations>
   <Project Path="ClinicManager/ClinicManager.csproj" Id="8c134774-9510-4393-85ba-2a63a0d4fe6d" />
   <Project Path="ClinicManagerTests/ClinicManagerTests.csproj" Id="b48d121c-b6a0-40de-a73b-a26ad4684bda" />
+  <Project Path="NBomberTests/NBomberTests.csproj" Id="02f02a79-860a-4f76-a597-ff59ae3a683a" />
 </Solution>
