@@ -33,5 +33,15 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             .WithMany()
             .HasForeignKey(pr => pr.ProcedureId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Microsoft.Data.SqlClient 6.1.1 throws InvalidCastException when reading
+        // a 'date' column directly as DateOnly (GetFieldValue<DateOnly>). Reading
+        // it as DateTime and converting in memory avoids that buggy code path.
+        modelBuilder.Entity<Patient>()
+            .Property(p => p.DateOfBirth)
+            .HasConversion(
+                d => d.ToDateTime(TimeOnly.MinValue),
+                dt => DateOnly.FromDateTime(dt))
+            .HasColumnType("date");
     }
 }

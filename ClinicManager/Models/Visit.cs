@@ -1,7 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManager.Models
 {
+    [Index(nameof(DoctorId), nameof(ScheduledAt))]
     public class Visit
     {
         public int Id { get; set; }
