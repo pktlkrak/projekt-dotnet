@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ClinicManager\ClinicManager.csproj" />
     <Using Include="NUnit.Framework" />
   </ItemGroup>
 
